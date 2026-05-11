@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雅思听力课堂评价生成器</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#3d4f5f;--primary-light:#eaf0f6;--primary-dark:#2c3a48;
+  --accent:#c4956a;--accent-light:#fbf5ef;--accent-dark:#a6774d;
+  --success:#4f806d;--success-light:#eaf4ef;
+  --danger:#c0392b;--danger-light:#fdf0ee;
+  --bg:#faf7f2;--bg-warm:#f5f0e8;
+  --card:#fff;--card-hover:#fefdfb;
+  --text:#2c2c2c;--text-secondary:#6b6b6b;--text-muted:#999;
+  --border:#e8e3da;--border-light:#f2efe8;
+  --radius-sm:6px;--radius:10px;--radius-lg:14px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.06);
+  --shadow:0 1px 3px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.08);
+  --transition:200ms cubic-bezier(.4,0,.2,1);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;
+  -webkit-font-smoothing:antialiased;overflow-y:scroll;
+}
+
+/* Header */
+header{
+  background:linear-gradient(180deg,#fff 0%,#fefdfb 100%);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;display:grid;grid-template-columns:1fr auto;align-items:center;
+  height:60px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);
+  backdrop-filter:blur(8px);width:100%;
+}
+header h1{font-size:18px;font-weight:700;color:var(--primary);letter-spacing:-.3px;white-space:nowrap}
+header h1::before{content:'\270E ';color:var(--accent);font-size:16px}
+.header-actions{display:flex;gap:8px;align-items:center;white-space:nowrap}
+
+/* Tabs */
+.tabs{
+  display:flex;gap:4px;background:var(--card);border-bottom:1px solid var(--border);
+  padding:6px 28px;align-items:flex-end;
+}
+.tab{
+  padding:10px 22px;cursor:pointer;border:none;background:none;
+  font-size:13.5px;color:var(--text-secondary);font-weight:500;
+  transition:all var(--transition);border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+  position:relative;
+}
+.tab:hover{color:var(--primary);background:var(--primary-light)}
+.tab.active{color:var(--primary);background:var(--bg);font-weight:600}
+.tab.active::after{content:'';position:absolute;bottom:0;left:8px;right:8px;height:2px;background:var(--accent);border-radius:1px}
+
+/* Content */
+.content{max-width:1400px;margin:0 auto;padding:24px 28px}
+.panel{display:none;animation:fadeIn .25s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards */
+.card{
+  background:var(--card);border-radius:var(--radius-lg);
+  padding:24px;margin-bottom:16px;
+  box-shadow:var(--shadow-sm);border:1px solid var(--border);
+  transition:box-shadow var(--transition);
+}
+.card:hover{box-shadow:var(--shadow)}
+.card h2{font-size:16px;font-weight:700;margin-bottom:18px;color:var(--primary);letter-spacing:-.2px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:8px 16px;
+  border-radius:var(--radius-sm);font-size:13px;font-weight:500;
+  cursor:pointer;border:1px solid var(--border);background:var(--card);
+  color:var(--text);transition:all var(--transition);white-space:nowrap;
+  letter-spacing:.1px;
+}
+.btn:hover{background:var(--bg-warm);border-color:#d5cfc4;transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
+.btn-primary:hover{background:var(--primary-dark);border-color:var(--primary-dark);box-shadow:var(--shadow)}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-success:hover{background:#3d6b59;border-color:#3d6b59}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn-danger:hover{background:#a83225;border-color:#a83225}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:5px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:4px}
+.btn-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+
+/* Form inputs */
+input,select,textarea{
+  padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:13px;font-family:inherit;background:var(--card);color:var(--text);
+  transition:all var(--transition);
+}
+input:hover,select:hover,textarea:hover{border-color:#d0cbc2}
+input:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);
+}
+textarea{width:100%;resize:vertical;min-height:60px;line-height:1.6}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border-light)}
+th{
+  font-weight:600;background:linear-gradient(180deg,#faf9f6,#f7f4ef);
+  position:sticky;top:0;color:var(--text-secondary);font-size:11.5px;
+  white-space:nowrap;text-transform:uppercase;letter-spacing:.4px;
+  z-index:5;box-shadow:0 2px 4px rgba(0,0,0,.05);
+}
+thead tr th:first-child,
+tbody tr td:first-child{
+  position:sticky;left:0;z-index:3;background:var(--card);
+}
+thead tr th:first-child{z-index:6;background:linear-gradient(180deg,#faf9f6,#f7f4ef)}
+tbody tr:nth-child(even) td:first-child{background:#fefdfb}
+tbody tr:hover td:first-child{background:#faf7f2}
+thead tr th:first-child::after{
+  content:'';position:absolute;right:-4px;top:0;bottom:0;width:4px;
+  background:linear-gradient(90deg,rgba(0,0,0,.04),transparent);
+}
+tbody tr{transition:background var(--transition)}
+tbody tr:nth-child(even){background:#fefdfb}
+tbody tr:hover{background:#faf7f2}
+
+tr.dragging{opacity:.35;background:var(--accent-light)!important}
+tr.drag-over{border-top:3px solid var(--accent)!important}
+tr[draggable=true]{cursor:grab}
+tr[draggable=true]:active{cursor:grabbing}
+.drag-handle{cursor:grab;margin-right:6px;color:var(--text-muted);user-select:none;font-size:14px;transition:color var(--transition)}
+.drag-handle:hover{color:var(--text)}
+
+/* Tags */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.2px}
+.tag-good{background:var(--success-light);color:var(--success)}
+.tag-mid{background:#fef7e8;color:#b87a2b}
+.tag-poor{background:var(--danger-light);color:var(--danger)}
+
+/* Score input */
+.score-input{width:60px;text-align:center;font-variant-numeric:tabular-nums;padding:6px 8px}
+.score-cell{display:flex;align-items:center;gap:5px}
+.score-pct{font-size:11px;color:var(--text-secondary);min-width:36px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* Modal */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(45,40,35,.35);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  z-index:200;justify-content:center;align-items:flex-start;padding-top:48px;
+  animation:fadeIn .2s ease;
+}
+.modal-overlay.show{display:flex}
+.modal{
+  background:var(--card);border-radius:var(--radius-lg);padding:28px;
+  max-width:920px;width:92%;max-height:78vh;overflow-y:auto;
+  box-shadow:var(--shadow-lg),0 0 0 1px rgba(0,0,0,.04);
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal h2{font-size:17px;font-weight:700;margin-bottom:18px;color:var(--primary)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-light)}
+
+/* Report */
+.report-block{
+  margin-bottom:14px;padding:16px 18px;border-radius:var(--radius);
+  border:1px solid var(--border-light);background:var(--card);
+  transition:box-shadow var(--transition);
+}
+.report-block:hover{box-shadow:var(--shadow-sm)}
+.report-block h4{font-size:13.5px;color:var(--primary);margin-bottom:8px;font-weight:600}
+.report-block p{font-size:13px;line-height:1.85;color:var(--text)}
+
+/* Utility */
+.flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.text-light{color:var(--text-secondary);font-size:12px}
+.mt-8{margin-top:8px}
+.mb-8{margin-bottom:8px}
+.empty{text-align:center;color:var(--text-muted);padding:48px 40px;font-size:14px}
+.empty-icon{font-size:40px;display:block;margin-bottom:12px;opacity:.5}
+.empty p{margin-bottom:12px;line-height:1.7}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.table-wrap{overflow-x:auto;max-height:60vh;overflow-y:auto;border-radius:var(--radius-sm);border:1px solid var(--border-light)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d5cfc7;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#c0b9b0}
+
+/* Selection */
+::selection{background:var(--accent-light);color:var(--accent-dark)}
+
+/* Expand toggle smoothness */
+.collapsible-body{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1)}
+.collapsible-body.open{max-height:3000px}
+[id^="classBody_"],[id^="lessonBody_"],[id^="reportBody_"]{}
+</style>
+</head>
+<body>
+
+<header><h1>雅思听力数据_Anna</h1>
+<div class="header-actions">
+<button class="btn btn-sm" onclick="exportData()">导出数据</button>
+<button class="btn btn-sm" onclick="document.getElementById('importFile').click()">导入数据</button>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+<button class="btn btn-sm" onclick="showThresholdModal()">阈值配置</button>
+<button class="btn btn-sm" onclick="showTemplateModal()">话术模板</button>
+</div></header>
+
+<div class="tabs">
+<button class="tab" data-tab="classes" onclick="switchTab('classes')">班级 &amp; 学生</button>
+<button class="tab active" data-tab="lessons" onclick="switchTab('lessons')">课堂练习录入</button>
+<button class="tab" data-tab="reports" onclick="switchTab('reports')">评价报告</button>
+</div>
+
+<div class="content">
+
+<div id="panel-classes" class="panel">
+<div class="card"><div class="flex-between mb-8"><h2>班级列表</h2><button class="btn btn-primary btn-sm" onclick="addGroupClass()" style="margin-right:6px">+ 新增班课</button><button class="btn btn-sm" onclick="addOneOnOne()">+ 新增一对一</button></div>
+<div id="classList"></div></div>
+</div>
+
+<div id="panel-lessons" class="panel active">
+<div class="row mb-8" style="gap:8px"><input id="lessonSearchInput" type="text" placeholder="搜索学生姓名..." style="width:200px;font-size:12px;padding:6px 10px" oninput="studentSearch=this.value;renderLessonPanel();if(currentLessonId)renderLessonScores();"><span id="lessonSearchHint" class="text-light" style="display:none">已过滤</span></div>
+<div id="lessonPanel"></div>
+</div>
+
+<div id="panel-reports" class="panel">
+<div class="row mb-8" style="gap:8px"><input id="reportSearchInput" type="text" placeholder="搜索学生姓名..." style="width:200px;font-size:12px;padding:6px 10px" oninput="studentSearch=this.value;renderReportPanel();"><span id="reportSearchHint" class="text-light" style="display:none">已过滤</span></div>
+<div id="reportPanel"></div>
+</div>
+
+</div>
+
+<div class="modal-overlay" id="thresholdModal" onclick="if(event.target===this)closeThresholdModal()">
+<div class="modal" onclick="event.stopPropagation()">
+<h2>分档阈值配置</h2><p class="text-light mb-8">设置不同目标分的学生在各个 Section 的好/中/差最低正确率（%）</p>
+<div class="table-wrap"><table id="thresholdTable"><thead><tr><th>目标分</th><th>Section</th><th>等级</th><th>最低正确率(%)</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+<div class="btn-group mt-8"><button class="btn btn-primary btn-sm" onclick="addThreshold()">+ 添加规则</button></div>
+<div class="modal-actions"><button class="btn btn-sm" onclick="resetThresholds()">恢复默认</button><button class="btn btn-primary btn-sm" onclick="closeThresholdModal()">关闭</button></div>
+</div></div>
+
+<div class="modal-overlay" id="templateModal" onclick="if(event.target===this)closeTemplateModal()">
+<div class="modal" onclick="event.stopPropagation()">
+<h2>话术模板管理</h2>
+<div class="row mb-8" style="justify-content:space-between"><p class="text-light">编辑各维度各等级的评价话术文本</p>
+<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="exportTemplatesCSV()">导出模板CSV</button>
+<button class="btn btn-sm" onclick="document.getElementById('importTplFile').click()">导入模板CSV</button>
+<input type="file" id="importTplFile" accept=".csv" style="display:none" onchange="importTemplatesCSV(event)"></div></div>
+<div class="table-wrap"><table id="templateTable"><thead><tr><th>维度</th><th>等级</th><th>话术文本</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+<div class="btn-group mt-8"><button class="btn btn-primary btn-sm" onclick="addTemplate()">+ 新增模板</button></div>
+<div class="modal-actions"><button class="btn btn-sm" onclick="resetTemplates()">恢复默认</button><button class="btn btn-primary btn-sm" onclick="closeTemplateModal()">关闭</button></div>
+</div></div>
+
+<script>
+var STORE_KEY='ielts_eval_data';
+var store=loadStore();
+
+function defaultStore(){
+  return {classes:[],students:[],lessons:[],templates:getDefaultTemplates(),thresholds:getDefaultThresholds(),nextId:1};
+}
+function loadStore(){
+  try{var raw=localStorage.getItem(STORE_KEY);if(raw){var data=JSON.parse(raw);if(data.templates&&data.thresholds){
+    var defaults=getDefaultTemplates();
+    var storedGroups={};
+    data.templates.forEach(function(t){storedGroups[t.group+'_'+t.level]=true;});
+    defaults.forEach(function(t){
+      var key=t.group+'_'+t.level;
+      if(!storedGroups[key])data.templates.push(t);
+    });
+    return data;
+  }}}catch(e){}
+  return defaultStore();
+}
+function saveStore(){localStorage.setItem(STORE_KEY,JSON.stringify(store));}
+function genId(){return store.nextId++;}
+function getClassType(cls){return cls.type||'班课';}
+function pickTemplate(group,level){
+  var candidates=store.templates.filter(function(t){return t.group===group&&t.level===level;});
+  if(candidates.length===0)return null;
+  return candidates[Math.floor(Math.random()*candidates.length)];
+}
+function getTemplateText(group,level){
+  var t=pickTemplate(group,level);
+  return t?t.text:'';
+}
+function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function getDefaultTemplates(){
+  return [
+    {id:1,group:'课堂表现',level:'好',text:'课堂注意力非常集中，听讲非常认真，做好课堂笔记，非常配合老师，积极回答，精神面貌非常好，遇到疑问能积极举手提问，课堂活动积极认真参与，课堂练习能快速优质完成，学习主动性很强，课堂上表现踊跃。'},
+    {id:2,group:'课堂表现',level:'中',text:'课堂注意力比较集中，听讲比较认真，有笔记记录，总体配合老师，回答认真，总体精神面貌都挺好，偶尔走神，遇到疑问基本能积极求助，课堂讨论参与度较高，课堂练习完成快，但质量需要加强，学习主动性较强，课堂上略显内敛。'},
+    {id:3,group:'课堂表现',level:'差',text:'课堂注意力时有分散，听讲不够认真，笔记要加强，课堂回答有待进步，整体显得比较疲惫，精神涣散，学习比较被动，需要主动提问，课堂讨论参与得比较少，完成课堂练习时略显拖沓，学习主动性需要加强，课堂上比较被动。'},
+    {id:4,group:'作业完成',level:'好',text:'作业按时完成，作业完成质量高，从作业来看课下有认真复习课堂内容，上次课强调的知识点基本吸收，作业按时完成且有自己的总结反思，听写作业有完成而且背好了生词，课上练习的生词背诵情况好，作业有很好的总结反思。'},
+    {id:5,group:'作业完成',level:'中',text:'作业没有按时完成，作业有完成但是质量有待提高，从作业来看上次课的内容还需要继续复习，课堂强调的知识点还需要继续复习，作业完成质量还行可以加强质量，听写作业有完成但是没有整理背诵生词，课上练习的生词背诵要加强。'},
+    {id:6,group:'作业完成',level:'差',text:'作业没完成，作业敷衍只完成任务，从作业来看回去没有复习课堂内容，作业多次没有完成，在上课前才匆忙赶作业导致质量不高，听写作业完全没做，课上练习的生词没有背，作业没有总结反思。'},
+    {id:7,group:'词汇',level:'好',text:'基础词汇量充足，基础词汇熟练度高，词汇辨音准确度高，学科单词储备好，学科单词语音识别度高，单词反应快，单词读音准确，听写单词准确率高，对话场景词汇熟练，讲座学科词汇熟练。'},
+    {id:8,group:'词汇',level:'中',text:'基础词汇量不是很充足，基础词汇熟练度一般，词汇辨音较准确，学科单词储备一般，学科单词语音识别度一般，单词反应一般，单词读音准确度还要加强，听写单词准确率较好，对话场景词汇熟练度有待提高，讲座学科词汇熟练度有待提高。'},
+    {id:9,group:'词汇',level:'差',text:'基础词汇量比较缺乏，基础词汇熟练度较低，词汇辨音准确度低，学科单词储备少，学科单词语音识别度较低，单词反应慢，单词读音错误较多，听写单词准确率较低，对话场景词汇熟练度低，讲座学科词汇熟练度低。'},
+    {id:10,group:'语音辨析',level:'好',text:'听力不受辨音问题影响，听到单词发音能快速说出中文意思，否定信息把握得非常准确，句子中的弱读能够准确识别，句子的理解不会受连读的影响，动词词组也能迅速理解，比较适应语速，能准确通过句子中的重音识别出被强调的信息，对语音语调的识别比较准确，能根据说话者的语气辨别说话者的态度。'},
+    {id:11,group:'语音辨析',level:'中',text:'辨音基础尚可，听到单词反应中文意思的速度要加快，容易漏听否定信息如wasn\'t，句子中读得很轻的读音容易听不出来，句子中的连读容易听不出来，动词词组的介词容易听不出来，语速较快的地方容易听漏信息，对于句子中的重音不敏感，动词如果是以过去时或过去分词的形式出现就容易听不懂。'},
+    {id:12,group:'语音辨析',level:'差',text:'辨音问题突出，听到单词反应中文意思的速度慢，基本听不出来否定信息如wasn\'t，句子中读得很轻的读音基本听不出来，句子中的连读基本听不出来，两个单词如果连读容易以为是一个单词，动词词组的介词基本听不出来，语速较快的地方容易听不懂，听不出来句子中的重音。'},
+    {id:13,group:'拼写-字母',level:'好',text:'学生在字母类拼写题目正确率很高，学生对于字母发音的反应速度很快，对于根据单词中的发音划分音节以及预判音节开头辅音字母的技巧掌握得非常熟练，对连续字母发音的识别不会受连读的影响，在长串单词的拼写当中不会听漏字母或者写错发音相似的易混淆的字母。'},
+    {id:14,group:'拼写-字母',level:'中',text:'学生在字母类拼写题目正确率一般，学生对于字母发音的反应速度适中，基本上能够运用根据单词中的发音划分音节以及预判音节开头辅音字母的技巧，偶尔会因为连读识别不出来连续字母发音，在长串单词的拼写当中偶尔会听漏字母或者写错发音相似的易混淆的字母（比如说M和N）。'},
+    {id:15,group:'拼写-字母',level:'差',text:'学生在字母类拼写题目正确率偏低，学生对于字母发音的反应速度比较慢，对于根据单词中的发音划分音节以及预判音节开头辅音字母的技巧掌握得还不是特别熟练，时常由于连读识别不出来连续字母发音，特别是在长串单词的拼写当中容易听漏字母或者写错发音相似的易混淆的字母（比如说M和N）。'},
+    {id:16,group:'拼写-数字',level:'好',text:'学生在数字类拼写题目正确率很高，学生对于数字发音的反应速度很快，长串数字的拼写题目正确率也很高，不会混淆十几和几十的发音，能够快速反应日期中序数词的发音，能够准确识别8和9的发音而不会因为连读混淆。'},
+    {id:17,group:'拼写-数字',level:'中',text:'学生在数字类拼写题目正确率一般，学生对于数字发音的反应速度适中，长串数字的拼写题目正确率还有提升的空间，有的时候容易一下子反应不过来，偶尔会混淆十几和几十的发音，对于日期中序数词的发音有的时候容易反应不过来，偶尔会因为连读混淆8和9的发音。'},
+    {id:18,group:'拼写-数字',level:'差',text:'学生在数字类拼写题目正确率偏低，学生对于数字发音的反应速度比较慢，特别是对于长串数字的反应速度比较慢，当数字比较多的时候容易一下子反应不过来，容易混淆十几和几十的发音，很难快速反应日期中序数词的发音，如果有连读则很难识别8和9的发音。'},
+    {id:19,group:'笔记技巧',level:'好',text:'逻辑和顺序清晰，层次感强，抓住层次主旨和重点词，缩写和符号丰富灵活使用，明显表现出题点的信息，主干信息多，巧用同义替换和中文，并列层次和信号词明显，识别出一问一答，单词辨音准确。'},
+    {id:20,group:'笔记技巧',level:'中',text:'逻辑和顺序尚可，有尝试分层，只是抓住听到的单词无法识别主旨句和细节的关系，有缩写和符号节约时间，分层模糊和出题规律勉强匹配，主干信息尚可，有时用同义替换和中文，并列层次和信号词有一定的识别，识别一部分的问答信号，单词辨音达标有个别单词会混淆。'},
+    {id:21,group:'笔记技巧',level:'差',text:'笔记完全没有顺序性，没有分层概念一直横着写混乱分段，零散写几个听到的单词没有尝试理解很机械地写碎片化信息，没有使用缩写和符号替代比较耗时不够简洁，无法体现出考点和出题规律，无法识别主干信息多细节且无用信息，没有同义替换和中文，并列层次和信号词弱结构松散无序。'},
+    {id:22,group:'填空题',level:'好',text:'在完成填空题练习时，学生能够比较好的运用课堂上所学习的读题顺序和画关键词的方式去读题，并且通过空格前后词性、场景线索预判答案的词性和可能的词意；基础词汇量充足，能够充分理解题干中的关键词的含义；在听录音时辨音基础很好，能够准确将听到的发音与已知词汇对应；学生不会依赖原词重现，能够很好地识别定位词在录音中的同义替换；能够通过转折词（however）、强调词（crucially）定位答案；在填写答案时很少出现常见词汇拼写错误；关注单复数、时态等细节。'},
+    {id:23,group:'填空题',level:'中',text:'在完成填空题练习时，学生基本上能够比较好的运用课堂上所学习的读题顺序和画关键词的方式去读题，但是偶尔不能通过空格前后词性、场景线索预判答案的词性和可能的词意；基础词汇量不是很充足，有的时候题干中的关键词会对学生对题目的理解造成阻碍；在听录音时辨音基础一般，学生有的时候难以将听到的发音与已知词汇对应；学生有的时候过度依赖原词重现，没有识别出定位词在录音中的同义替换；偶尔忽略转折词（however）、强调词（crucially）等答案提示信号；在填写答案时偶尔出现常见词汇拼写错误（如helmet）；在录音速度比较快时偶尔忽略单复数、时态等细节。'},
+    {id:24,group:'填空题',level:'差',text:'在完成填空题练习时，学生很少能够运用课堂上所学习的读题顺序和画关键词的方式去读题，并且比较难通过空格前后词性、场景线索预判答案的词性和可能的词意；基础词汇量比较缺乏，难以识别题干中的关键词（如高频场景词accommodation）；在听录音时学生很难将听到的发音与已知词汇对应；学生过度依赖原词重现，忽略同义替换（e.g. accommodation替换anywhere to stay）；错过转折词（however）、强调词（crucially）等答案提示信号；在填写答案时出现常见词汇拼写错误（如helmet）；忽略单复数、时态等细节。'},
+    {id:25,group:'单选题',level:'好',text:'在读题时，学生词汇基础较好，生词很少对学生对于题目的理解造成阻碍；对干扰项的两种形式及题目语言特点的知识点掌握得比较到位，能够快速并且准确地判断题目的考察方向，在读题时能够快速找出题目中的限制条件和选项中的定位词。在完成听力练习时，由于学生辨音基础较好，学生对词汇发音比较熟悉，能够在听到关键词发音的第一时间定位选项；能够很好地分辨连读等细节；听感很好，对句子的整体含义能够做到理解大致意思而不是只能听懂单个词汇，即使有的时候错过关键词发音也能够通过上下文定位选项；同义替换词积累扎实，可以快速反应录音中的改写表达；能够准确识别否定结构和强调结构，不会混淆绝对程度和相对程度。'},
+    {id:26,group:'单选题',level:'中',text:'在读题时，学生词汇基础一般，生词有时对学生对于题目的理解造成阻碍；对干扰项的两种形式及题目语言特点的知识点运用的水平一般，能够判断题目的考察方向但是准确度和速度需要提高，在读题时需要更多的时间找出题目中的限制条件和选项中的定位词。在完成听力练习时，由于学生辨音基础一般，学生对词汇发音不太熟悉，有的时候听到关键词发音但是不能快速定位选项；偶尔会因为连读、弱读等细节有辨音错误；听感一般，有的时候句子结构比较复杂或者比较长的时候难以理解句子含义；同义替换词还需要继续积累，需要更多的时间反应录音中的改写表达；有的时候会被否定结构误导或没有捕捉到否定词。'},
+    {id:27,group:'单选题',level:'差',text:'在读题时，学生词汇基础还有比较大的提升空间，生词经常对学生对于题目的理解造成阻碍；对干扰项的两种形式及题目语言特点的知识点掌握的程度还有提升的空间，大部分情况下难以快速并且准确地判断题目的考察方向，在读题时难以快速找出题目中的限制条件和选项中的定位词。在完成听力练习时，由于学生辨音基础还需要提高，学生大部分时候难以把词汇拼写和发音联系起来；无法分辨连读、弱读等细节；听感还需要提升，只能听懂单个词汇而不能理解句子整体含义意思；同义替换词积累还有很大的提升空间，很难快速反应录音中的改写表达。'},
+    {id:28,group:'多选题',level:'好',text:'在读题时，学生词汇基础较好，生词很少对学生对于题目的理解造成阻碍；对干扰项的两种形式及题目语言特点的知识点掌握得比较到位，能够快速在录音开始前完成题干和所有选项关键词标注，并且准确判断出题方向、预测语义。在完成听力练习时，由于学生辨音基础较好，学生对词汇发音比较熟悉，能够在听到关键词发音的第一时间定位选项；学生能够很好地处理多线程信息，很少遗漏并列信息或者忽略限定条件；同义替换词积累扎实，可以快速反应录音中的改写表达；对信号词响应迅速，能够通过强调表达和语调变化定位答案。'},
+    {id:29,group:'多选题',level:'中',text:'在读题时，学生词汇基础一般，生词有时对学生对于题目的理解造成阻碍；对干扰项的两种形式及题目语言特点的知识点运用的水平一般，需要比规定更多的时间在录音开始前完成题干和所有选项关键词标注，并且有的时候不太能够准确判断出题方向、预测语义。在完成听力练习时，由于学生辨音基础一般，学生对词汇发音不太熟悉，有的时候听到关键词发音但是不能快速定位选项；当录音速度比较快或者同义替换的形式比较复杂时学生难以快速处理多线程信息，有时遗漏并列信息或者忽略限定条件；同义替换词还需要继续积累。'},
+    {id:30,group:'多选题',level:'差',text:'在读题时，学生词汇基础还有比较大的提升空间，生词经常对学生对于题目的理解造成阻碍；对干扰项的两种形式及题目语言特点的知识点掌握的程度还有提升的空间，大部分情况下未能快速在录音开始前完成题干和所有选项关键词标注，只是机械画线而非预测语义，容易混淆语义重叠度高的选项。在完成听力练习时，由于学生辨音基础还需要提高，学生大部分时候难以把词汇拼写和发音联系起来；学生容易产生信息过载焦虑，遇到生词或复杂句式时停止思考错过后续内容；同义替换词积累不足。'},
+    {id:31,group:'匹配题',level:'好',text:'在读题时，学生词汇基础较好，生词很少对学生对于题目的理解造成阻碍；对同义替换的四种形式掌握得比较到位，能够快速在录音开始前完成选项关键词标注，并且识别语义和预测关键词同义替换。在完成听力练习时，由于学生辨音基础较好，学生对词汇发音比较熟悉，能够在听到关键词发音的第一时间定位选项；在完成同义替换形式比较复杂的听力录音时，学生基本能够把具体例子对应到选项中的抽象类别；逻辑捕捉得比较到位，能够通过重听部分在原文中的上下文理解清楚逻辑关系，能在对原文理解的同义替换的基础上进行推断。'},
+    {id:32,group:'匹配题',level:'中',text:'在读题时，学生词汇基础一般，生词有时对学生对于题目的理解造成阻碍；能够在录音开始前完成选项关键词标注并且识别语义，但是不太能够应用同义替换的四种形式预测关键词同义替换。在完成听力练习时，由于学生辨音基础一般，学生对词汇发音不太熟悉，有的时候听到关键词发音但是不能快速定位选项；在完成同义替换形式比较复杂的听力录音时，学生比较难把具体例子对应到选项中的抽象类别；有尝试去捕捉上下文的逻辑关系但理解得还不够恰当，进行了一些不太恰当的推断没有基于原文理解。'},
+    {id:33,group:'匹配题',level:'差',text:'在读题时，学生词汇基础还有比较大的提升空间，生词经常对学生对于题目的理解造成阻碍；对同义替换的四种形式的知识点掌握的程度还有提升的空间，大部分情况下未能快速在录音开始前完成选项关键词标注和预测同义替换，只是机械画线而非识别语义。在完成听力练习时，由于学生辨音基础还需要提高，学生大部分时候难以把词汇拼写和发音联系起来；在完成同义替换形式比较复杂的听力录音时，学生基本无法把具体例子对应到选项中的抽象类别；没有去理解重听部分在原文中的上下文的逻辑关系，会出现过度推断。'},
+    {id:34,group:'地图题',level:'好',text:'在读题时，学生效率很高，能够在规定时间内找到所有信息（可能的起点和方位、已知和隐藏的地标），并且预判和做笔记记录可能的路径走向和方位表达；在完成听力练习时，学生可以通过笔或者手指的辅助将听觉方位词转化为空间图像；即使路径描述比较复杂（超过3个转折点）学生也能紧跟录音；不会混淆绝对方向（东南西北）和相对方向（左右）；方位词库积累充足，比较复杂/非常见的方位表达可以快速反应。'},
+    {id:35,group:'地图题',level:'中',text:'在读题时，学生基本能够在规定时间内找到所有信息（可能的起点和方位、已知和隐藏的地标），但是在预判可能的路径走向和方位表达时偶尔会有遗漏；在完成听力练习时，学生基本可以通过笔或者手指的辅助将听觉方位词转化为空间图像，但是有的时候会反应不过来而跟丢；如果路径描述比较复杂（超过3个转折点）学生有的时候未能捕捉移动动词变化或丢失位置更新节点；偶尔会混淆绝对方向和相对方向；方位词库还需要继续积累。'},
+    {id:36,group:'地图题',level:'差',text:'在读题时，学生很难在规定时间内找到所有信息（可能的起点和方位、已知和隐藏的地标），需要提高预判和做笔记记录可能的路径走向和方位表达的效率；在完成听力练习时学生很难通过笔或者手指的辅助将听觉方位词转化为空间图像；一旦路径描述比较复杂（超过3个转折点）学生基本上会捕捉不到移动动词变化或丢失位置更新节点；经常会混淆绝对方向和相对方向；方位词库积累缺乏。'},
+    {id:37,group:'Part4填空题',level:'好',text:'在读题时，学生学术词汇和话题专属词汇的储备扎实，生词很少对学生对于题目的理解造成阻碍；熟练掌握长难句结构划分和考点判断（如并列、举例），能够在限定时间内快速判断答案的词性和可能的词义。在完成听力练习时，学生对词汇发音很熟悉，能够很好地运用边听录音边勾划关键词的定位技巧；能够快速区分"主干信息"和"辅助信息"；对关键词同义替换反应速度很快，能够根据句子结构定位答案词；注意力能够长时间集中基本不会走神；在填写答案时学生基本不会出现词汇拼写错误或者语法形式错误。'},
+    {id:38,group:'Part4填空题',level:'中',text:'在读题时，学生有些缺乏学术词汇和话题专属词汇的储备，生词偶尔对学生对于题目的理解造成阻碍；基本能够划分长难句结构和判断考点（如并列、举例），但是需要比限定更多的时间判断答案的词性和可能的词义。在完成听力练习时，学生对词汇发音比较熟悉但是个别生词仍有些陌生，基本能够运用边听录音边勾划关键词的定位技巧；偶尔不能区分"主干信息"和"辅助信息"；对关键词同义替换反应速度比较快但是偶尔不能根据句子结构定位答案词；注意力基本能够长时间集中但是偶尔会出现前半段专注后半段走神的现象。'},
+    {id:39,group:'Part4填空题',level:'差',text:'在读题时，学生学术词汇和话题专属词汇的储备还有很大的提升空间，生词经常对学生对于题目的理解造成阻碍；长难句结构划分和考点判断（如并列、举例）技巧掌握程度需要提高，基本难以在限定时间内快速判断答案的词性和可能的词义。在完成听力练习时，学生对大部分词汇发音比较陌生，难以运用边听录音边勾划关键词的定位技巧容易丢失录音定位；需要练习如何区分"主干信息"和"辅助信息"；对关键词同义替换反应速度比较慢；注意力难以长时间集中偶尔会出现因某题没听清而心态崩溃的现象。'},
+    {id:40,group:'数字字母',level:'好',text:'学生在字母类拼写题目正确率很高，学生对于字母发音的反应速度很快，对于根据单词中的发音划分音节以及预判音节开头辅音字母的技巧掌握得非常熟练，对连续字母发音的识别不会受连读的影响，在长串单词的拼写当中不会听漏字母或者写错发音相似的易混淆的字母。学生在数字类拼写题目正确率很高，学生对于数字发音的反应速度很快，长串数字的拼写题目正确率也很高，不会混淆十几和几十的发音，能够快速反应日期中序数词的发音，能够准确识别8和9的发音而不会因为连读混淆。'},
+    {id:41,group:'数字字母',level:'中',text:'学生在字母类拼写题目正确率一般，学生对于字母发音的反应速度适中，基本上能够运用根据单词中的发音划分音节以及预判音节开头辅音字母的技巧，偶尔会因为连读识别不出来连续字母发音，在长串单词的拼写当中偶尔会听漏字母或者写错发音相似的易混淆的字母（比如说M和N）。学生在数字类拼写题目正确率一般，学生对于数字发音的反应速度适中，长串数字的拼写题目正确率还有提升的空间，有的时候容易一下子反应不过来，偶尔会混淆十几和几十的发音，对于日期中序数词的发音有的时候容易反应不过来，偶尔会因为连读混淆8和9的发音。'},
+    {id:42,group:'数字字母',level:'差',text:'学生在字母类拼写题目正确率偏低，学生对于字母发音的反应速度比较慢，对于根据单词中的发音划分音节以及预判音节开头辅音字母的技巧掌握得还不是特别熟练，时常由于连读识别不出来连续字母发音，特别是在长串单词的拼写当中容易听漏字母或者写错发音相似的易混淆的字母（比如说M和N）。学生在数字类拼写题目正确率偏低，学生对于数字发音的反应速度比较慢，特别是对于长串数字的反应速度比较慢，当数字比较多的时候容易一下子反应不过来，容易混淆十几和几十的发音，很难快速反应日期中序数词的发音。'},
+    {id:43,group:'建议',level:'好',text:'建议学生认真完成课后作业，提升对于数字和字母发音的熟悉程度和反应速度，争取part 1基础拼写题目能拿到满分。建议学生认真完成课后作业，根据课堂上学习的干扰项的形式判断出题方向，并且整理课上学习的生词和知识点，对课堂学习的知识进行总结复习。'},
+    {id:44,group:'建议',level:'中',text:'建议学生在完成课后练习时按照课上学习的读题方式进行限时训练，提升读题速度和预测答案的准确程度。建议学生认真完成课后作业积累词汇，并且在完成作业之外可以多补充英文材料，并且尝试自行翻译，锻炼对长篇听力以及快速听力内容的即时反应能力。建议一定要完成作业，做好课上知识点的整理，对课上所学内容进行巩固复习。'},
+    {id:45,group:'建议',level:'差',text:'建议学生认真完成课后作业，严格按照课堂上学习的做题步骤读题，充分理解题目中的信息，并且复习课上学习的相关表达和词汇。建议在完成练习时使用笔或手指帮助定位，课后一定要完成作业并进行精听分析，整理错题和生词，巩固课堂所学知识。'},
+    {id:46,group:'听英文写中英文',level:'好',text:'英文单词听写正确率高，学生对于英文单词发音的反应速度很快，能够准确将听到的单词发音与拼写对应；中文释义掌握扎实，能够快速准确地写出单词的中文意思；词汇辨音准确度高，场景词汇和学科词汇的掌握都比较到位。'},
+    {id:47,group:'听英文写中英文',level:'中',text:'英文单词听写正确率一般，学生对于英文单词发音的反应速度适中，部分单词的拼写存在错误（如字母顺序颠倒、漏写字母）；中文释义掌握尚可，但部分单词的中文意思回忆速度较慢或不够准确；词汇辨音尚可，但个别发音相近的单词容易混淆。'},
+    {id:48,group:'听英文写中英文',level:'差',text:'英文单词听写正确率偏低，学生对于英文单词发音的反应速度比较慢，较多单词无法准确拼写；中文释义掌握较弱，较多单词无法写出正确的中文意思；词汇辨音准确度低，需要加强基础词汇的拼写和中文释义的背诵。'},
+    {id:49,group:'听英文写中文',level:'好',text:'听英文写中文的正确率高，学生听到英文单词发音后能够快速反应出对应的中文释义；基础词汇和场景词汇的中文掌握都很扎实，词汇反应速度快，辨音准确。'},
+    {id:50,group:'听英文写中文',level:'中',text:'听英文写中文的正确率一般，学生听到英文单词发音后反应中文释义的速度适中；部分单词的中文意思掌握不够牢固，需要更多时间回忆；场景词汇的中文释义掌握有待加强，个别发音相近的单词容易混淆中文意思。'},
+    {id:51,group:'听英文写中文',level:'差',text:'听英文写中文的正确率偏低，学生听到英文单词发音后很难快速反应出对应的中文释义；较多基础词汇的中文意思没有掌握；单词反应速度慢，需要加强英文单词中文释义的背诵和辨音练习。'},
+    {id:52,group:'阶段总评',level:'好',text:'在本阶段的学习中，学生整体表现优秀，各题型正确率稳定在较高水平，课堂参与积极，作业完成认真，词汇和辨音基础扎实，展现了良好的学习态度和持续进步的能力。'},
+    {id:53,group:'阶段总评',level:'中',text:'在本阶段的学习中，学生整体表现良好，大部分题型能够达到预期水平，但个别题型还存在提升空间，课堂和作业表现总体稳定，需要在薄弱环节上加强练习和积累。'},
+    {id:54,group:'阶段总评',level:'差',text:'在本阶段的学习中，学生整体表现有待提升，多个题型的正确率偏低，课堂参与度和作业完成情况需要改善，词汇和辨音基础还需大力加强，建议从基础做起逐步建立信心。'},
+    {id:55,group:'进步趋势',level:'好',text:'从各课次成绩来看，学生呈现出明显的上升趋势，后期课次的正确率较前期有显著提高，说明课堂所学知识和技巧正在逐步内化，学习方法和努力方向正确，继续保持。'},
+    {id:56,group:'进步趋势',level:'中',text:'从各课次成绩来看，学生的表现总体稳定，没有出现明显的大幅波动，部分题型有小幅进步，但也有一些题型变化不大，建议在稳定中寻求突破，针对薄弱点进行专项训练。'},
+    {id:57,group:'进步趋势',level:'差',text:'从各课次成绩来看，学生的表现波动较大，部分课次成绩有明显下滑，可能反映出某些题型或知识点掌握不牢固，建议回顾错题较多的课次，找出问题根源并进行针对性补强。'},
+    {id:58,group:'薄弱环节',level:'好',text:'学生在各题型上的表现比较均衡，没有明显的短板，各项能力发展较为全面。建议在保持优势的基础上，可以适当挑战更高难度的题目，进一步拓展听力能力边界。'},
+    {id:59,group:'薄弱环节',level:'中',text:'学生在部分题型上表现出一定的薄弱，需要重点关注和加强。建议在后续学习中针对这些薄弱题型进行专项训练，同时注意巩固已掌握题型的正确率，做到均衡发展。'},
+    {id:60,group:'薄弱环节',level:'差',text:'学生在多个题型上存在明显的薄弱之处，正确率远低于目标水平，这些薄弱环节严重影响了整体听力表现。建议从最基础的题型开始，逐一攻克，每次聚焦1-2个薄弱点进行强化训练。'},
+    {id:61,group:'阶段建议',level:'好',text:'建议在下一阶段继续保持当前的学习节奏和方法，适当增加模拟考试的练习频次，注重时间管理和应试技巧的训练，为冲刺更高目标分做好准备。同时可以多接触真实的英语听力材料拓宽听感。'},
+    {id:62,group:'阶段建议',level:'中',text:'建议在下一阶段重点攻克薄弱题型，制定每周专项训练计划，坚持课后精听和单词背诵，同时注意保持良好的作业完成习惯。可以在每次课后花时间整理错题和同义替换，逐步提升综合听力水平。'},
+    {id:63,group:'阶段建议',level:'差',text:'建议在下一阶段从基础入手，重新夯实词汇和辨音基础，每天保证一定的听力输入量。课后务必完成作业并进行精听分析，从Part 1的简单题型开始逐步建立信心。建议与老师多沟通，制定个性化的提升方案。'}
+  ];
+}
+
+function getDefaultThresholds(){
+  return [
+    {id:1,targetBand:'5.5',sectionRange:'P1-P2',level:'好',minPercent:70},
+    {id:2,targetBand:'5.5',sectionRange:'P1-P2',level:'中',minPercent:50},
+    {id:3,targetBand:'5.5',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:4,targetBand:'5.5',sectionRange:'P3-P4',level:'好',minPercent:60},
+    {id:5,targetBand:'5.5',sectionRange:'P3-P4',level:'中',minPercent:40},
+    {id:6,targetBand:'5.5',sectionRange:'P3-P4',level:'差',minPercent:0},
+    {id:7,targetBand:'6.5',sectionRange:'P1-P2',level:'好',minPercent:80},
+    {id:8,targetBand:'6.5',sectionRange:'P1-P2',level:'中',minPercent:65},
+    {id:9,targetBand:'6.5',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:10,targetBand:'6.5',sectionRange:'P3-P4',level:'好',minPercent:70},
+    {id:11,targetBand:'6.5',sectionRange:'P3-P4',level:'中',minPercent:50},
+    {id:12,targetBand:'6.5',sectionRange:'P3-P4',level:'差',minPercent:0},
+    {id:13,targetBand:'7.0',sectionRange:'P1-P2',level:'好',minPercent:90},
+    {id:14,targetBand:'7.0',sectionRange:'P1-P2',level:'中',minPercent:75},
+    {id:15,targetBand:'7.0',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:16,targetBand:'7.0',sectionRange:'P3-P4',level:'好',minPercent:80},
+    {id:17,targetBand:'7.0',sectionRange:'P3-P4',level:'中',minPercent:60},
+    {id:18,targetBand:'7.0',sectionRange:'P3-P4',level:'差',minPercent:0},
+    {id:19,targetBand:'5.5',sectionRange:'数字字母',level:'好',minPercent:80},
+    {id:20,targetBand:'5.5',sectionRange:'数字字母',level:'中',minPercent:60},
+    {id:21,targetBand:'5.5',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:22,targetBand:'5.5',sectionRange:'单词听写',level:'好',minPercent:80},
+    {id:23,targetBand:'5.5',sectionRange:'单词听写',level:'中',minPercent:60},
+    {id:24,targetBand:'5.5',sectionRange:'单词听写',level:'差',minPercent:0},
+    {id:25,targetBand:'6.5',sectionRange:'数字字母',level:'好',minPercent:85},
+    {id:26,targetBand:'6.5',sectionRange:'数字字母',level:'中',minPercent:70},
+    {id:27,targetBand:'6.5',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:28,targetBand:'6.5',sectionRange:'单词听写',level:'好',minPercent:85},
+    {id:29,targetBand:'6.5',sectionRange:'单词听写',level:'中',minPercent:70},
+    {id:30,targetBand:'6.5',sectionRange:'单词听写',level:'差',minPercent:0},
+    {id:31,targetBand:'7.0',sectionRange:'数字字母',level:'好',minPercent:90},
+    {id:32,targetBand:'7.0',sectionRange:'数字字母',level:'中',minPercent:80},
+    {id:33,targetBand:'7.0',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:34,targetBand:'7.0',sectionRange:'单词听写',level:'好',minPercent:90},
+    {id:35,targetBand:'7.0',sectionRange:'单词听写',level:'中',minPercent:80},
+    {id:36,targetBand:'7.0',sectionRange:'单词听写',level:'差',minPercent:0}
+  ];
+}
+
+function getSectionRange(section,qType){if(qType==='数字字母')return'数字字母';if(qType==='听英文写中英文'||qType==='听英文写中文')return'单词听写';if(section==='单词听写')return'单词听写';var s=parseInt(section);return(s===1||s===2)?'P1-P2':'P3-P4';}
+function getLevel(percent,targetBand,section,qType){
+  var range=getSectionRange(section,qType);
+  var thresholds=store.thresholds.filter(function(t){return t.targetBand===targetBand&&t.sectionRange===range;});
+  thresholds.sort(function(a,b){return b.minPercent-a.minPercent;});
+  for(var i=0;i<thresholds.length;i++){if(percent>=thresholds[i].minPercent)return thresholds[i].level;}
+  return '差';
+}
+var QUESTION_TYPES=['数字字母','填空题','单选题','多选题','匹配题','地图题','听英文写中英文','听英文写中文'];
+
+var ALL_TEST_IDS={
+  '5.5':{
+    'part1':{'填空题':['C13T2P1','C8T1P1','C15T1P1']},
+    'part2':{'单选题':['C7T3P2'],'多选题':['C13T2P2'],'匹配题':['C14T3P2'],'地图题':[]},
+    'part3':{'单选题':['C14T4P3','C13T2P3','C14T2P3','C14T1P3'],'多选题':['C8T4P3','C16T3P3'],'匹配题':['C14T1P3']},
+    'part4':{'填空题':['C13T1P4','C13T4P4','C14T1P4','C14T3P4']},
+    '单词听写':{'听英文写中英文':[],'听英文写中文':[]}
+  },
+  '6.5':{
+    'part1':{'填空题':['C12T7P1','C18T4P1']},
+    'part2':{'单选题':['C11T3P2','C13T4P2'],'多选题':['C11T2P2','C15T4P2'],'匹配题':['C10T2P2','C12T5P2'],'地图题':['C14T2P2']},
+    '特殊':{'填空题':['C15T1P2','C9T4P4']},
+    'part3':{'单选题':['C12T7P3','C18T1P3','C11T1P3','C19T2P3'],'多选题':['C18T3P3','C11T4P3'],'匹配题':['C12T8P3','C16T4P3']},
+    'part4':{'填空题':['C13T2P4','C11T1P4']},
+    '单词听写':{'听英文写中英文':[],'听英文写中文':[]}
+  },
+  '7.0':{
+    'part1':{'填空题':['答案前置练习','数字干扰练习']},
+    'part2':{'地图题':['C12T8P2']},
+    'part3':{'单选题':['C17T2P3','C19T1P3','C18T3P3','C13T3P3','C18T2P3','C17T4P3','C16T4P3']},
+    'part4':{'填空题':['C17T3P4','C12T7P4','C17T1P4','C14T1P4']},
+    '单词听写':{'听英文写中英文':[],'听英文写中文':[]}
+  }
+};
+
+var TEST_BANK={
+  '5.5':{
+    1:{'数字字母':'C13T2P1 / C8T1P1','填空题':'C13T2P1 / C8T1P1','total':10},
+    2:{'填空题':'C15T1P1','total':10},
+    3:{'单选题':'C7T3P2','total':6},
+    4:{'多选题':'C13T2P2','匹配题':'C14T3P2','total':6},
+    5:{'地图题':'C14T2P2','单选题':'C14T4P3 / C13T2P3','total':6},
+    6:{'单选题':'C8T4P3 / C16T3P3','多选题':'C14T1P3','total':6},
+    7:{'Part4填空题':'C13T1P4 / C13T4P4','total':10},
+    8:{'Part4填空题':'C14T1P4 / C14T3P4','total':10}
+  },
+  '6.5':{
+    1:{'数字字母':'C12T7P1 / C18T4P1','填空题':'C12T7P1 / C18T4P1','total':10},
+    2:{'单选题':'C11T3P2 / C13T4P2','多选题':'C11T2P2 / C15T4P2','total':6},
+    3:{'匹配题':'C10T2P2 / C12T5P2','地图题':'C14T2P2','total':6},
+    4:{'填空题':'C15T1P2 / C9T4P4','单选题':'C12T7P3 / C18T1P3','total':6},
+    5:{'多选题':'C18T3P3 / C11T4P3','匹配题':'C12T8P3 / C16T4P3','total':6},
+    6:{'Part4填空题':'C13T2P4 / C11T1P4','total':10},
+    7:{'Part4填空题':'C11T3P4 / C15T2P4','total':10}
+  },
+  '7.0':{
+    1:{'填空题':'答案前置/数字干扰练习','total':10},
+    2:{'Part4填空题':'考点词练习','total':10},
+    3:{'Part4填空题':'答案预测+递进并列','total':10},
+    4:{'地图题':'地图题练习','total':6},
+    5:{'单选题':'转折否定+否定同义替换','total':6},
+    6:{'单选题':'上下义词+解释说明','total':6},
+    7:{'单选题':'态度观点','total':6},
+    8:{'单选题':'干扰项','total':6},
+    9:{'Part4填空题':'流程图+图形','total':6},
+    10:{'Part4填空题':'考点词','total':10},
+    11:{'Part4填空题':'读题','total':10},
+    12:{'Part4填空题':'四大场景','total':10}
+  }
+};
+
+function getLessonSequence(lesson){
+  var classId=lesson.classId;
+  var cls=store.classes.find(function(c){return c.id==classId;});
+  if(!cls)return 1;
+  var bandLessons=store.lessons.filter(function(l){return l.classId==classId;});
+  bandLessons.sort(function(a,b){return (a.date||'')>(b.date||'')?1:-1;});
+  var idx=bandLessons.findIndex(function(l){return l.id==lesson.id;});
+  return idx>=0?idx+1:bandLessons.length;
+}
+
+function getTestInfo(band,seq,questionType){
+  var bandData=TEST_BANK[band];
+  if(!bandData)return null;
+  var seqData=bandData[seq];
+  if(!seqData)return null;
+  var testId=seqData[questionType]||'';
+  var total=seqData['total']||10;
+  return {testId:testId,total:total};
+}
+var QUESTION_TEMPLATE_MAP={'数字字母':['数字字母'],'填空题':['填空题'],'单选题':['单选题'],'多选题':['多选题'],'匹配题':['匹配题'],'地图题':['地图题'],'听英文写中英文':['听英文写中英文'],'听英文写中文':['听英文写中文']};
+var currentLessonId=null;var studentSearch='';
+
+function sortStudents(list){return list.sort(function(a,b){return (a.sortOrder||0)-(b.sortOrder||0);});}
+function updateSearchHints(){var lh=document.getElementById('lessonSearchHint');if(lh)lh.style.display=studentSearch?'inline':'none';var rh=document.getElementById('reportSearchHint');if(rh)rh.style.display=studentSearch?'inline':'none';}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===name);});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='classes')renderClasses();
+  if(name==='lessons'){studentSearch='';renderLessonPanel();}
+  if(name==='reports'){studentSearch='';currentReportLessonId=null;renderReportPanel();}
+}
+
+function renderClasses(){
+  var div=document.getElementById('classList');
+  if(store.classes.length===0){div.innerHTML='<div class="empty"><span class="empty-icon">&#x1F3AB;</span><p>还没有创建班级</p></div>';return;}
+  var h='';
+  [{label:'班课',list:store.classes.filter(function(c){return getClassType(c)==='班课';})},
+   {label:'一对一',list:store.classes.filter(function(c){return getClassType(c)==='一对一';})}].forEach(function(group){
+    h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:15px">'+group.label+' ('+group.list.length+')</h3>';
+    if(group.list.length===0){h+='<div class="text-light mb-8">暂无'+group.label+'</div>';}
+    else{group.list.forEach(function(cls){h+=renderClassCard(cls);});}
+  });
+  div.innerHTML=h;
+}
+
+function renderClassCard(cls){
+  var students=sortStudents(store.students.filter(function(s){return s.classId==cls.id;}));
+  var isOne=cls.type=='一对一';
+  var h='<div class="card" style="margin-bottom:12px">';
+  h+='<div class="flex-between" style="cursor:pointer" onclick="toggleClassExpand(\''+cls.id+'\')">';
+  h+='<div><span id="expandIcon_'+cls.id+'" style="display:inline-block;width:16px;font-size:12px">&#x25B6;</span> ';
+  h+='<strong>'+esc(cls.name)+'</strong>';
+  h+='<span class="tag tag-mid" style="margin-left:8px">目标 '+esc(cls.targetBand)+' 分</span>';
+  if(!isOne)h+='<span class="text-light" style="margin-left:8px">'+students.length+' 名学生</span>';
+  h+='</div>';
+  h+='<div class="btn-group" onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="editClass(\''+cls.id+'\')">编辑</button>';
+  h+='<button class="btn btn-sm btn-danger" onclick="deleteClass(\''+cls.id+'\')">删除</button></div></div>';
+  h+='<div id="classBody_'+cls.id+'" class="collapsible-body" style="margin-top:12px">';
+  if(isOne){
+    h+='<div class="text-light">一对一课程，学生：'+esc(cls.name)+'</div>';
+  }else if(students.length>0){
+    h+='<div class="table-wrap" style="max-height:400px"><table><thead><tr>';
+    h+='<th style="width:36px"><input type="checkbox" onchange="toggleSelectAll(this,\'cls_'+cls.id+'\')" title="全选"></th>';
+    h+='<th style="width:30px"></th><th>姓名</th><th>操作</th></tr></thead><tbody>';
+    students.forEach(function(s){
+      h+='<tr draggable="true" data-sid="'+s.id+'" data-cid="'+cls.id+'" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropStudent(event)" ondragend="dragEnd(event)">';
+      h+='<td><input type="checkbox" class="student-cb cls_'+cls.id+'" value="'+s.id+'" onchange="updateSelectedCount(\''+cls.id+'\')"></td>';
+      h+='<td><span class="drag-handle" title="拖动排序">&#x2630;</span></td>';
+      h+='<td>'+esc(s.name)+'</td>';
+      h+='<td><button class="btn btn-xs" onclick="editStudent(\''+s.id+'\')">编辑</button> ';
+      h+='<button class="btn btn-xs btn-danger" onclick="deleteStudent(\''+s.id+'\')">删除</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+    h+='<div class="row mt-8"><button class="btn btn-xs btn-danger" onclick="batchDeleteStudents(\''+cls.id+'\')">删除选中</button>';
+    h+='<span class="text-light">已选 <span id="selectedCount_'+cls.id+'">0</span> 人</span>';
+    h+='<span class="text-light" style="margin-left:8px">| 拖拽 &#x2630; 排序</span></div>';
+    h+='<div class="row mt-8" style="align-items:flex-start"><textarea id="batchInput_'+cls.id+'" rows="3" style="width:240px;font-size:12px" placeholder="批量添加：每行一个学生姓名"></textarea>';
+    h+='<button class="btn btn-sm btn-primary" onclick="batchAddStudents(\''+cls.id+'\')">批量添加</button></div>';
+  }else{
+    h+='<div class="text-light mb-8">暂无学生</div>';
+    h+='<div class="row mt-8" style="align-items:flex-start"><textarea id="batchInput_'+cls.id+'" rows="3" style="width:240px;font-size:12px" placeholder="批量添加：每行一个学生姓名"></textarea>';
+    h+='<button class="btn btn-sm btn-primary" onclick="batchAddStudents(\''+cls.id+'\')">批量添加</button></div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
+function toggleClassExpand(classId){
+  var body=document.getElementById('classBody_'+classId);
+  var icon=document.getElementById('expandIcon_'+classId);
+  if(!body||!icon)return;
+  if(body.classList.contains('open')){
+    body.classList.remove('open');
+    icon.innerHTML='&#x25B6;';
+  }else{
+    body.classList.add('open');
+    icon.innerHTML='&#x25BC;';
+  }
+}
+
+function addGroupClass(){
+  var name=prompt('班级名称（如 YZKT 1000）：');if(!name)return;
+  var targetBand=prompt('目标分数（5.5 / 6.5 / 7.0）：');
+  if(!targetBand||['5.5','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.5, 6.5, 7.0');return;}
+  store.classes.push({id:genId(),name:name,targetBand:targetBand,type:'班课'});
+  saveStore();renderClasses();renderLessonPanel();renderReportPanel();
+}
+
+function addOneOnOne(){
+  var name=prompt('学生姓名：');if(!name)return;
+  var targetBand=prompt('目标分数（5.5 / 6.5 / 7.0）：');
+  if(!targetBand||['5.5','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.5, 6.5, 7.0');return;}
+  var clsId=genId();
+  store.classes.push({id:clsId,name:name,targetBand:targetBand,type:'一对一'});
+  store.students.push({id:genId(),name:name,classId:clsId,sortOrder:1});
+  saveStore();renderClasses();renderLessonPanel();renderReportPanel();
+}
+
+function editClass(id){
+  var cls=store.classes.find(function(c){return c.id==id;});if(!cls)return;
+  var name=prompt('班级名称：',cls.name);if(!name)return;
+  var targetBand=prompt('目标分数：',cls.targetBand);if(!targetBand)return;
+  cls.name=name;cls.targetBand=targetBand;
+  saveStore();renderClasses();
+}
+
+function deleteClass(id){
+  if(!confirm('确定要删除这个班级及其所有学生吗？'))return;
+  store.classes=store.classes.filter(function(c){return c.id!=id;});
+  store.students=store.students.filter(function(s){return s.classId!=id;});
+  store.lessons=store.lessons.filter(function(l){return l.classId!=id;});
+  saveStore();renderClasses();
+}
+
+function batchAddStudents(classId){
+  var textarea=document.getElementById('batchInput_'+classId);if(!textarea)return;
+  var raw=textarea.value.trim();if(!raw){alert('请输入学生姓名，每行一个');return;}
+  var names=raw.split(/[\n,，]+/).map(function(n){return n.trim();}).filter(function(n){return n;});
+  if(names.length===0){alert('未识别到有效姓名');return;}
+  var added=0;
+  var maxOrder=store.students.filter(function(s){return s.classId==classId;}).reduce(function(mx,s){return Math.max(mx,s.sortOrder||0);},0);
+  names.forEach(function(name){
+    if(!store.students.some(function(s){return s.classId==classId&&s.name===name;})){
+      maxOrder++;
+      store.students.push({id:genId(),name:name,classId:parseInt(classId),sortOrder:maxOrder});
+      added++;
+    }
+  });
+  textarea.value='';saveStore();renderClasses();
+  alert('已添加 '+added+' 名学生'+(names.length-added>0?'，'+(names.length-added)+' 名已存在跳过':''));
+}
+
+function batchDeleteStudents(classId){
+  var checked=document.querySelectorAll('.cls_'+classId+':checked');
+  if(checked.length===0){alert('请先勾选要删除的学生');return;}
+  if(!confirm('确定删除选中的 '+checked.length+' 名学生吗？'))return;
+  var ids=Array.from(checked).map(function(cb){return cb.value;});
+  store.students=store.students.filter(function(s){return ids.indexOf(String(s.id))===-1;});
+  saveStore();renderClasses();
+}
+
+function toggleSelectAll(cb,className){
+  document.querySelectorAll('.'+className).forEach(function(c){c.checked=cb.checked;});
+  updateSelectedCount(className.replace('cls_',''));
+}
+
+function updateSelectedCount(classId){
+  var count=document.querySelectorAll('.cls_'+classId+':checked').length;
+  var span=document.getElementById('selectedCount_'+classId);
+  if(span)span.textContent=count;
+}
+
+function editStudent(id){
+  var s=store.students.find(function(st){return st.id==id;});if(!s)return;
+  var name=prompt('学生姓名：',s.name);if(!name)return;
+  s.name=name;saveStore();renderClasses();
+}
+
+function deleteStudent(id){
+  if(!confirm('确定删除该学生吗？'))return;
+  store.students=store.students.filter(function(s){return s.id!=id;});
+  saveStore();renderClasses();renderLessonScores();
+}
+
+var dragSrcRow=null;
+
+function dragStart(e){
+  dragSrcRow=e.target.closest('tr');
+  if(!dragSrcRow)return;
+  dragSrcRow.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain','');
+}
+
+function dragOver(e){
+  e.preventDefault();
+  var row=e.target.closest('tr');
+  if(!row||row===dragSrcRow)return;
+  row.classList.add('drag-over');
+}
+
+function dragLeave(e){
+  var row=e.target.closest('tr');
+  if(row)row.classList.remove('drag-over');
+}
+
+function dropStudent(e){
+  e.preventDefault();
+  var targetRow=e.target.closest('tr');
+  if(!targetRow||!dragSrcRow||targetRow===dragSrcRow)return;
+  targetRow.classList.remove('drag-over');
+  var srcId=dragSrcRow.dataset.sid;
+  var tgtId=targetRow.dataset.sid;
+  var classId=dragSrcRow.dataset.cid;
+  var students=sortStudents(store.students.filter(function(s){return s.classId==classId;}));
+  var srcIdx=students.findIndex(function(s){return s.id==srcId;});
+  var tgtIdx=students.findIndex(function(s){return s.id==tgtId;});
+  if(srcIdx<0||tgtIdx<0)return;
+  var moved=students.splice(srcIdx,1)[0];
+  students.splice(tgtIdx,0,moved);
+  students.forEach(function(s,i){s.sortOrder=i+1;});
+  saveStore();renderClasses();
+}
+
+function dragEnd(e){
+  if(dragSrcRow)dragSrcRow.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(function(r){r.classList.remove('drag-over');});
+  dragSrcRow=null;
+}
+
+function renderLessonPanel(){
+  var div=document.getElementById('lessonPanel');
+  if(store.classes.length===0){div.innerHTML='<div class="empty"><span class="empty-icon">&#x1F4DD;</span><p>还没有创建班级</p><button class="btn btn-primary btn-sm" onclick="switchTab(\'classes\')">去创建班级</button></div>';return;}
+  var h='';
+  var sortedClasses=store.classes.concat().sort(function(a,b){return getClassType(a)==='一对一'?1:getClassType(b)==='一对一'?-1:0;}); var lastType=''; sortedClasses.forEach(function(cls){var ct=getClassType(cls);if(ct!==lastType){h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:14px">'+ct+'</h3>';lastType=ct;}
+    h+='<div class="card" style="margin-bottom:12px">';
+    h+='<div class="flex-between mb-8"><div><strong>'+esc(cls.name)+'</strong>';
+    h+='<span class="tag tag-mid" style="margin-left:8px">目标 '+esc(cls.targetBand)+' 分</span></div>';
+    h+='<button class="btn btn-primary btn-sm" onclick="createLesson(\''+cls.id+'\')">+ 新增课时</button></div>';
+    var lessons=store.lessons.filter(function(l){return l.classId==cls.id;});
+    if(lessons.length===0){
+      h+='<div class="empty" style="padding:28px"><span class="empty-icon" style="font-size:28px">&#x1F4D6;</span><p>该班级暂无课时记录</p></div>';
+    }else{
+      lessons.forEach(function(l){
+        var isOpen=l.id==currentLessonId;
+        h+='<div style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px">';
+        h+='<div class="flex-between" style="cursor:pointer" onclick="toggleLessonExpand(\''+l.id+'\')">';
+        h+='<div><span id="lessonIcon_'+l.id+'" style="display:inline-block;width:16px;font-size:12px">'+(isOpen?'&#x25BC;':'&#x25B6;')+'</span> ';
+        h+='<strong>'+esc(l.title)+'</strong>';
+        h+='<span class="text-light" style="margin-left:8px">'+esc(l.date)+'</span></div>';
+        h+='<button class="btn btn-xs btn-danger" onclick="event.stopPropagation();deleteLesson(\''+l.id+'\')">删除</button></div>';
+        h+='<div id="lessonBody_'+l.id+'" class="collapsible-body" style="margin-top:8px"></div>';
+        h+='</div>';
+      });
+    }
+    h+='</div>';
+  });
+  div.innerHTML=h;
+  updateSearchHints();
+  if(currentLessonId)renderLessonScores();
+}
+
+function createLesson(classId){
+  var date=prompt('日期（如 20250511）：',new Date().toISOString().slice(0,10).replace(/-/g,''));if(!date)return;
+  var title=prompt('课时标题（如 填空题）：');if(!title)return;
+  var seq=store.lessons.filter(function(l){return l.classId==classId;}).length+1;
+  if(!title.includes('L'))title='L'+seq+' '+title;
+  var lesson={id:genId(),classId:classId,date:date,title:title,entries:[],lessonSeq:seq};
+  store.lessons.push(lesson);
+  saveStore();renderLessonPanel();currentLessonId=lesson.id;renderLessonScores();
+}
+
+function loadLesson(id){
+  if(currentLessonId===id){currentLessonId=null;}else{currentLessonId=id;}
+  renderLessonPanel();
+  if(currentLessonId)renderLessonScores();
+}
+function loadLessonStudents(){currentLessonId=null;renderLessonPanel();}
+function toggleLessonExpand(id){
+  var wasOpen=currentLessonId===id;
+  if(wasOpen){currentLessonId=null;}else{currentLessonId=id;}
+  renderLessonPanel();
+  if(!wasOpen&&currentLessonId){
+    setTimeout(function(){
+      var body=document.getElementById('lessonBody_'+currentLessonId);
+      if(body)body.classList.add('open');
+    },20);
+  }
+}
+
+function deleteLesson(id){
+  if(!confirm('确定删除该课时及其所有成绩记录吗？'))return;
+  store.lessons=store.lessons.filter(function(l){return l.id!=id;});
+  currentLessonId=null;saveStore();renderLessonPanel();
+}
+
+
+function renderLessonScores(){
+  if(!currentLessonId)return;
+  var lesson=store.lessons.find(function(l){return l.id==currentLessonId;});if(!lesson)return;
+  var body=document.getElementById('lessonBody_'+currentLessonId);
+  if(!body)return;
+  var cls=store.classes.find(function(c){return c.id==lesson.classId;});
+  var allStuL=sortStudents(store.students.filter(function(s){return s.classId==lesson.classId;}));
+  var students=studentSearch?allStuL.filter(function(s){return s.name.indexOf(studentSearch)!==-1;}):allStuL;
+  if(students.length===0){body.innerHTML='<div class="text-light">该班级暂无学生</div>';return;}
+  var hasCols=lesson.entries.length>0&&lesson.entries[0].scores.length>0;
+  var h='<div class="flex-between mt-8 mb-8"><h3>'+esc(lesson.date)+' '+esc(lesson.title)+' — 成绩录入</h3>';
+  h+='<div class="row"><span class="text-light">目标分：'+esc(cls.targetBand)+'</span>';
+  h+='<button class="btn btn-sm btn-danger" onclick="deleteLesson(\''+lesson.id+'\')">删除课时</button></div></div>';
+  h+='<div class="table-wrap"><table id="scoreTable"><thead><tr><th>学生</th>';
+  // Fixed columns: 课堂表现 + 作业完成
+  h+='<th style="min-width:80px">课堂表现</th>';
+  h+='<th style="min-width:100px">作业完成</th>';
+  if(hasCols){
+    lesson.entries[0].scores.forEach(function(sc,i){
+      var testIdStr=sc.testId||'';
+      h+='<th>'+esc(sc.questionType)+' ('+(sc.section==='单词听写'?'单词听写':'P'+sc.section)+')';
+      h+='<br><input value="'+esc(testIdStr)+'" size="18" style="padding:2px 4px;font-size:10px;margin-top:2px" onchange="updateTestId(\''+lesson.id+'\','+i+',this.value)" placeholder="题号">';
+      if(sc.questionType==='听英文写中英文'){
+        h+='<br><span style="font-size:10px;font-weight:normal">英总: <input value="'+sc.total+'" size="3" style="padding:1px 3px;font-size:10px" onchange="applyDefaultTotal(\''+lesson.id+'\','+i+',this.value,\'en\')"></span>';
+        h+=' <span style="font-size:10px;font-weight:normal">中总: <input value="'+(sc.total_cn||'')+'" size="3" style="padding:1px 3px;font-size:10px" onchange="applyDefaultTotal(\''+lesson.id+'\','+i+',this.value,\'cn\')"></span>';
+      }else{
+        h+='<br><span style="font-size:11px;font-weight:normal">总题数: <input value="'+sc.total+'" size="3" style="padding:2px 4px;font-size:11px" onchange="applyDefaultTotal(\''+lesson.id+'\','+i+',this.value)" title="修改后自动应用到所有学生"></span>';
+      }
+      h+=' <button class="btn btn-xs btn-danger" style="margin-left:4px" onclick="removeScoreCol(\''+lesson.id+'\','+i+')">x</button></th>';
+    });
+  }else{
+    
+  }
+  h+='</tr></thead><tbody>';
+  students.forEach(function(stu){
+    var stuEntry=lesson.entries.find(function(e){return e.studentId==stu.id;});
+    if(!stuEntry){stuEntry={studentId:stu.id,scores:[],classroomLevel:'',homeworkLevel:'',homeworkNote:''};lesson.entries.push(stuEntry);}
+    if(!stuEntry.hasOwnProperty('classroomLevel'))stuEntry.classroomLevel='';
+    if(!stuEntry.hasOwnProperty('homeworkLevel'))stuEntry.homeworkLevel='';
+    if(!stuEntry.hasOwnProperty('homeworkNote'))stuEntry.homeworkNote='';
+    h+='<tr><td>'+esc(stu.name)+'</td>';
+    // 课堂表现 dropdown
+    h+='<td><select style="padding:4px 6px;font-size:12px;width:80px" onchange="updateClassroomLevel(\''+lesson.id+'\',\''+stu.id+'\',this.value)"><option value=""></option><option value="好"'+(stuEntry.classroomLevel==='好'?' selected':'')+'>好</option><option value="中"'+(stuEntry.classroomLevel==='中'?' selected':'')+'>中</option><option value="差"'+(stuEntry.classroomLevel==='差'?' selected':'')+'>差</option></select></td>';
+    // 作业完成 dropdown + optional manual input
+    h+='<td><div style="display:flex;align-items:center;gap:4px"><select style="padding:4px 6px;font-size:12px;width:80px" onchange="updateHomeworkLevel(\''+lesson.id+'\',\''+stu.id+'\',this.value)"><option value=""></option><option value="好"'+(stuEntry.homeworkLevel==='好'?' selected':'')+'>好</option><option value="中"'+(stuEntry.homeworkLevel==='中'?' selected':'')+'>中</option><option value="差"'+(stuEntry.homeworkLevel==='差'?' selected':'')+'>差</option><option value="手动"'+(stuEntry.homeworkLevel==='手动'?' selected':'')+'>手动填写</option></select>';
+    if(stuEntry.homeworkLevel==='手动'){
+      h+='<input style="flex:1;padding:4px 6px;font-size:11px" value="'+esc(stuEntry.homeworkNote||'')+'" placeholder="作业评语" onchange="updateHomeworkNote(\''+lesson.id+'\',\''+stu.id+'\',this.value)">';
+    }
+    h+='</div></td>';
+    if(hasCols){
+      lesson.entries[0].scores.forEach(function(col,i){
+        var sc=stuEntry&&stuEntry.scores[i]?stuEntry.scores[i]:{correct:'',total:'',correct_cn:'',total_cn:''};
+        var isDual=col.questionType==='听英文写中英文';
+        if(isDual){
+          // English score
+          var pct_en=(sc.correct!==''&&sc.total!==''&&parseInt(sc.total)>0)?Math.round(parseInt(sc.correct)/parseInt(sc.total)*100):'';
+          var lvl_en=pct_en!==''?getLevel(pct_en,cls.targetBand,col.section,col.questionType):'';
+          var tc_en=lvl_en==='好'?'tag-good':lvl_en==='中'?'tag-mid':lvl_en==='差'?'tag-poor':'';
+          // Chinese score
+          var pct_cn=(sc.correct_cn!==''&&sc.total_cn!==''&&parseInt(sc.total_cn)>0)?Math.round(parseInt(sc.correct_cn)/parseInt(sc.total_cn)*100):'';
+          var lvl_cn=pct_cn!==''?getLevel(pct_cn,cls.targetBand,col.section,col.questionType):'';
+          var tc_cn=lvl_cn==='好'?'tag-good':lvl_cn==='中'?'tag-mid':lvl_cn==='差'?'tag-poor':'';
+          h+='<td><div style="display:flex;flex-direction:column;gap:5px;min-width:180px">';
+          h+='<div class="score-cell" style="padding-bottom:4px;border-bottom:1px solid var(--border-light)"><span style="font-size:10px;color:var(--text-secondary);width:22px">英</span><input class="score-input" value="'+sc.correct+'" placeholder="对" data-student="'+stu.id+'" data-idx="'+i+'" data-field="correct" onchange="updateScore(\''+lesson.id+'\',\''+stu.id+'\','+i+',this)">';
+          h+='<span>/</span><input class="score-input" value="'+sc.total+'" placeholder="总" data-student="'+stu.id+'" data-idx="'+i+'" data-field="total" onchange="updateScore(\''+lesson.id+'\',\''+stu.id+'\','+i+',this)">';
+          h+='<span class="score-pct" style="min-width:36px">'+(pct_en!==''?pct_en+'%':'')+'</span>';
+          h+='<span class="tag '+tc_en+'" style="min-width:28px;visibility:'+(lvl_en?'visible':'hidden')+'">'+(lvl_en||'&nbsp;')+'</span></div>';
+          h+='<div class="score-cell" style="padding-top:2px"><span style="font-size:10px;color:var(--text-secondary);width:22px">中</span><input class="score-input" value="'+sc.correct_cn+'" placeholder="对" data-student="'+stu.id+'" data-idx="'+i+'" data-field="correct_cn" onchange="updateScore(\''+lesson.id+'\',\''+stu.id+'\','+i+',this)">';
+          h+='<span>/</span><input class="score-input" value="'+sc.total_cn+'" placeholder="总" data-student="'+stu.id+'" data-idx="'+i+'" data-field="total_cn" onchange="updateScore(\''+lesson.id+'\',\''+stu.id+'\','+i+',this)">';
+          h+='<span class="score-pct" style="min-width:36px">'+(pct_cn!==''?pct_cn+'%':'')+'</span>';
+          h+='<span class="tag '+tc_cn+'" style="min-width:28px;visibility:'+(lvl_cn?'visible':'hidden')+'">'+(lvl_cn||'&nbsp;')+'</span></div>';
+          h+='</div></td>';
+        }else{
+          var pct=(sc.correct!==''&&sc.total!==''&&parseInt(sc.total)>0)?Math.round(parseInt(sc.correct)/parseInt(sc.total)*100):'';
+          var lvl=pct!==''?getLevel(pct,cls.targetBand,col.section,col.questionType):'';
+          var tagClass=lvl==='好'?'tag-good':lvl==='中'?'tag-mid':lvl==='差'?'tag-poor':'';
+          h+='<td><div class="score-cell"><input class="score-input" value="'+sc.correct+'" placeholder="对" data-student="'+stu.id+'" data-idx="'+i+'" data-field="correct" onchange="updateScore(\''+lesson.id+'\',\''+stu.id+'\','+i+',this)">';
+          h+='<span>/</span><input class="score-input" value="'+sc.total+'" placeholder="总" data-student="'+stu.id+'" data-idx="'+i+'" data-field="total" onchange="updateScore(\''+lesson.id+'\',\''+stu.id+'\','+i+',this)">';
+          if(pct!=='')h+='<span class="score-pct">'+pct+'%</span>';
+          if(lvl)h+='<span class="tag '+tagClass+'">'+lvl+'</span>';
+          h+='</div></td>';
+        }
+      });
+    }
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="btn-group mt-8"><select id="newSection" style="width:80px" onchange="updateTestIdSuggestions()"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option><option value="5">单词听写</option></select>';
+  h+='<select id="newQType" style="width:120px" onchange="updateTestIdSuggestions()">'+QUESTION_TYPES.map(function(qt){return '<option value="'+qt+'">'+qt+'</option>';}).join('')+'</select>';
+  h+='<input id="newTestId" list="testIdList" placeholder="题号 (如C13T2P1)" style="width:150px;font-size:12px">';
+  h+='<datalist id="testIdList"></datalist>';
+  h+='<button class="btn btn-primary btn-sm" onclick="addScoreCol(\''+lesson.id+'\')">+ 添加题型列</button></div>';
+  h+='<div class="text-light mt-8">提示：输入正确数/总题数后自动计算百分比和分档（好/中/差）</div>';
+  var wrap=body.querySelector('.table-wrap');
+  var st=wrap?wrap.scrollTop:0;
+  var sl=wrap?wrap.scrollLeft:0;
+  var activeEl=document.activeElement;
+  var activeId=activeEl&&activeEl.dataset.student?activeEl.dataset.student:null;
+  var activeIdx=activeEl&&activeEl.dataset.idx?activeEl.dataset.idx:null;
+  var activeField=activeEl&&activeEl.dataset.field?activeEl.dataset.field:null;
+  body.innerHTML=h;
+  setTimeout(updateTestIdSuggestions,50);
+  if(st||sl){
+    var newWrap=body.querySelector('.table-wrap');
+    if(newWrap){newWrap.scrollTop=st;newWrap.scrollLeft=sl;}
+  }
+  if(activeId){
+    var sel='.score-input[data-student="'+activeId+'"]';
+    if(activeIdx)sel+='[data-idx="'+activeIdx+'"]';
+    if(activeField)sel+='[data-field="'+activeField+'"]';
+    var inp=body.querySelector(sel);
+    if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+  }
+}
+
+function updateTestIdSuggestions(){
+  if(!currentLessonId)return;
+  var lesson=store.lessons.find(function(l){return l.id==currentLessonId;});if(!lesson)return;
+  var cls=store.classes.find(function(c){return c.id==lesson.classId;});if(!cls)return;
+  var qType=document.getElementById('newQType').value;
+  var section=document.getElementById('newSection').value;
+  var datalist=document.getElementById('testIdList');
+  if(!datalist)return;
+  var bandData=ALL_TEST_IDS[cls.targetBand]||{};
+  var sectionKey=section==='5'?'单词听写':'part'+section;
+  var sectionData=bandData[sectionKey]||{};
+  var suggestions=(sectionData[qType]||[]).slice();
+  if(suggestions.length===0){
+    for(var key in bandData){
+      var arr=bandData[key][qType];
+      if(arr&&arr.length>0){
+        for(var i=0;i<arr.length;i++){if(suggestions.indexOf(arr[i])===-1)suggestions.push(arr[i]);}
+      }
+    }
+  }
+  suggestions=suggestions.filter(function(s){return s;});
+  datalist.innerHTML=suggestions.map(function(id){return '<option value="'+esc(id)+'">';}).join('');
+}
+
+function updateClassroomLevel(lessonId,studentId,val){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  var ent=lesson.entries.find(function(e){return e.studentId==studentId;});
+  if(!ent){ent={studentId:studentId,scores:[],classroomLevel:'',homeworkLevel:'',homeworkNote:''};lesson.entries.push(ent);}
+  ent.classroomLevel=val;saveStore();
+}
+
+function updateHomeworkLevel(lessonId,studentId,val){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  var ent=lesson.entries.find(function(e){return e.studentId==studentId;});
+  if(!ent){ent={studentId:studentId,scores:[],classroomLevel:'',homeworkLevel:'',homeworkNote:''};lesson.entries.push(ent);}
+  ent.homeworkLevel=val;
+  if(val!=='手动')ent.homeworkNote='';
+  saveStore();renderLessonScores();
+}
+
+function updateHomeworkNote(lessonId,studentId,val){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  var ent=lesson.entries.find(function(e){return e.studentId==studentId;});
+  if(!ent)return;
+  ent.homeworkNote=val;saveStore();
+}
+
+function addScoreCol(lessonId){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  var qType=document.getElementById('newQType').value;
+  var sectionRaw=document.getElementById('newSection').value;
+  var section=(sectionRaw==='5')?'单词听写':parseInt(sectionRaw);
+  var testIdInput=document.getElementById('newTestId');
+  var testId=testIdInput?testIdInput.value.trim():'';
+  var cls=store.classes.find(function(c){return c.id==lesson.classId;});
+  var seq=getLessonSequence(lesson);
+  var testInfo=getTestInfo(cls?cls.targetBand:'5.5',seq,qType);
+  var defaultTotal=testInfo?testInfo.total:'';
+  if(!testId&&testInfo)testId=testInfo.testId;
+  var allStuL=sortStudents(store.students.filter(function(s){return s.classId==lesson.classId;}));
+  var students=studentSearch?allStuL.filter(function(s){return s.name.indexOf(studentSearch)!==-1;}):allStuL;
+  if(lesson.entries.length===0){
+    students.forEach(function(stu){lesson.entries.push({studentId:stu.id,scores:[{questionType:qType,section:section,testId:testId,correct:'',total:defaultTotal,correct_cn:'',total_cn:''}]});});
+  }else{
+    lesson.entries.forEach(function(e){e.scores.push({questionType:qType,section:section,testId:testId,correct:'',total:defaultTotal,correct_cn:'',total_cn:''});});
+    students.forEach(function(stu){
+      if(!lesson.entries.find(function(e){return e.studentId==stu.id;})){
+        var firstEntry=lesson.entries[0];
+        lesson.entries.push({studentId:stu.id,scores:firstEntry.scores.map(function(s){return {questionType:s.questionType,section:s.section,testId:testId,correct:'',total:defaultTotal,correct_cn:'',total_cn:''};})});
+      }
+    });
+  }
+  var maxScores=Math.max.apply(null,lesson.entries.map(function(e){return e.scores.length;}));
+  lesson.entries.forEach(function(e){while(e.scores.length<maxScores)e.scores.push({questionType:qType,section:section,testId:testId,correct:'',total:defaultTotal,correct_cn:'',total_cn:''});});
+  saveStore();renderLessonScores();
+}
+
+function applyDefaultTotal(lessonId,idx,totalVal,field){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  lesson.entries.forEach(function(e){
+    if(e.scores[idx]){
+      if(field==='cn')e.scores[idx].total_cn=totalVal;
+      else if(field==='en')e.scores[idx].total=totalVal;
+      else{e.scores[idx].total=totalVal;if(e.scores[idx].questionType==='听英文写中英文')e.scores[idx].total_cn=totalVal;}
+    }
+  });
+  saveStore();renderLessonScores();
+}
+
+function updateTestId(lessonId,idx,newTestId){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  lesson.entries.forEach(function(e){
+    if(e.scores[idx])e.scores[idx].testId=newTestId;
+  });
+  saveStore();
+}
+
+function removeScoreCol(lessonId,idx){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  lesson.entries.forEach(function(e){e.scores.splice(idx,1);});
+  saveStore();renderLessonScores();
+}
+
+function updateScore(lessonId,studentId,idx,input){
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  var ent=lesson.entries.find(function(e){return e.studentId==studentId;});
+  if(!ent){ent={studentId:studentId,scores:[]};lesson.entries.push(ent);}
+  if(!ent.scores[idx])ent.scores[idx]={questionType:'',section:1,correct:'',total:''};
+  ent.scores[idx][input.dataset.field]=input.value;
+  saveStore();renderLessonScores();
+}
+
+function renderReportPanel(){
+  var div=document.getElementById('reportPanel');
+  if(store.classes.length===0){div.innerHTML='<div class="empty"><span class="empty-icon">&#x1F4DD;</span><p>还没有创建班级</p><button class="btn btn-primary btn-sm" onclick="switchTab(\'classes\')">去创建班级</button></div>';return;}
+  var h='';
+  var sortedClasses=store.classes.concat().sort(function(a,b){return getClassType(a)==='一对一'?1:getClassType(b)==='一对一'?-1:0;}); var lastType=''; sortedClasses.forEach(function(cls){var ct=getClassType(cls);if(ct!==lastType){h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:14px">'+ct+'</h3>';lastType=ct;}
+    var lessons=store.lessons.filter(function(l){return l.classId==cls.id;});
+    h+='<div class="card" style="margin-bottom:12px">';
+    h+='<div class="flex-between mb-8"><div><strong>'+esc(cls.name)+'</strong>';
+    h+='<span class="tag tag-mid" style="margin-left:8px">目标 '+esc(cls.targetBand)+' 分</span>';
+    h+='<span class="text-light" style="margin-left:8px">'+lessons.length+' 课时</span></div></div>';
+    if(lessons.length===0){
+      h+='<div class="empty" style="padding:28px"><span class="empty-icon" style="font-size:28px">&#x1F4D6;</span><p>该班级暂无课时记录</p></div>';
+    }else{
+      // Lesson checkboxes + select all
+      h+='<div class="row mb-8" style="gap:8px"><span class="text-light">阶段汇总：</span>';
+      h+='<button class="btn btn-xs" onclick="selectAllLessons(\''+cls.id+'\')">全选</button>';
+      h+='<button class="btn btn-xs" onclick="deselectAllLessons(\''+cls.id+'\')">取消全选</button>';
+      h+='<select onchange="setSummaryDim(\''+cls.id+'\',this.value)" style="font-size:11px;padding:3px 8px;width:auto">';
+      h+='<option value="type">按题型</option><option value="section">按Section</option><option value="sectionType">按Section×题型</option></select>';
+      h+='<button class="btn btn-xs btn-primary" onclick="generateSummary(\''+cls.id+'\')">生成阶段报告</button></div>';
+      lessons.forEach(function(l){
+        var isOpen=l.id==currentReportLessonId;
+        h+='<div style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px">';
+        h+='<div class="flex-between" style="cursor:pointer" onclick="toggleReportLesson(\''+l.id+'\')">';
+        h+='<div><input type="checkbox" class="summary-cb cb_'+cls.id+'" value="'+l.id+'" onclick="event.stopPropagation()" style="margin-right:8px">';
+        h+='<span id="reportIcon_'+l.id+'" style="display:inline-block;width:16px;font-size:12px">'+(isOpen?'&#x25BC;':'&#x25B6;')+'</span> ';
+        h+='<strong>'+esc(l.title)+'</strong>';
+        h+='<span class="text-light" style="margin-left:8px">'+esc(l.date)+'</span></div></div>';
+        h+='<div id="reportBody_'+l.id+'" style="display:'+(isOpen?'block':'none')+';margin-top:8px;animation:fadeIn .25s ease"></div>';
+        h+='</div>';
+      });
+    }
+    h+='<div id="summaryBody_'+cls.id+'" style="margin-top:12px"></div>';
+    h+='</div>';
+  });
+  div.innerHTML=h;
+  if(currentReportLessonId)generateReport();
+}
+
+function selectAllLessons(classId){
+  document.querySelectorAll('.cb_'+classId).forEach(function(cb){cb.checked=true;});
+}
+function deselectAllLessons(classId){
+  document.querySelectorAll('.cb_'+classId).forEach(function(cb){cb.checked=false;});
+}
+
+var summaryDimCache={};
+function setSummaryDim(classId,dim){summaryDimCache[classId]=dim;}
+
+
+var currentReportLessonId=null;
+
+function toggleReportLesson(id){
+  var wasOpen=currentReportLessonId==id;
+  if(wasOpen){currentReportLessonId=null;renderReportPanel();return;}
+  currentReportLessonId=id;
+  renderReportPanel();
+  var body=document.getElementById('reportBody_'+id);
+  if(body)body.classList.add('open');
+}
+
+
+function generateReport(){
+  if(!currentReportLessonId)return;
+  var lessonId=currentReportLessonId;
+  var lesson=store.lessons.find(function(l){return l.id==lessonId;});if(!lesson)return;
+  var body=document.getElementById('reportBody_'+lessonId);
+  if(!body)return;
+  var classId=lesson.classId;
+  var cls=store.classes.find(function(c){return c.id==classId;});
+  var allStuR=sortStudents(store.students.filter(function(s){return s.classId==classId;}));
+  var students=studentSearch?allStuR.filter(function(s){return s.name.indexOf(studentSearch)!==-1;}):allStuR;
+  if(!lesson||lesson.entries.length===0||lesson.entries[0].scores.length===0){
+    body.innerHTML='<div class="empty"><span class="empty-icon">&#x1F4DD;</span><p>该课时暂无成绩数据</p></div>';return;
+  }
+  var scoreCols=lesson.entries[0].scores;
+
+  // === Class score summary ===
+  var typeGroups={}; var typeOrder=[];
+  scoreCols.forEach(function(col,colIdx){
+    var key=col.questionType;
+    if(!typeGroups[key]){typeGroups[key]=[];typeOrder.push(key);}
+    typeGroups[key].push({idx:colIdx,testId:col.testId||'',section:col.section,total:col.total});
+  });
+  var classSummary='<div class="report-block"><h4>班级练习成绩汇总</h4>';
+  typeOrder.forEach(function(qType){
+    var cols=typeGroups[qType];
+    var allTestIds=cols.map(function(c){return c.testId;}).filter(function(t){return t;}).join(', ');
+    var sampleCol=scoreCols[cols[0].idx];
+    var threshold=store.thresholds.filter(function(t){return t.targetBand===cls.targetBand&&t.level==='中'&&getSectionRange(sampleCol.section,qType)===t.sectionRange;});
+    var passRate=threshold.length>0?threshold[0].minPercent:60;
+    var label=qType+'听力练习情况';
+    if(allTestIds)label+='（'+allTestIds+'）';
+    label+='：合格正确率⚠️'+passRate+'%';
+    classSummary+='<p style="margin-top:8px;font-weight:600;font-size:12px">'+esc(label)+'</p><p style="font-size:12px;line-height:2">';
+    students.forEach(function(stu){
+      var sEntry=lesson.entries.find(function(e){return e.studentId==stu.id;});
+      if(!sEntry)return;
+      var parts=[];
+      cols.forEach(function(c){
+        var sc2=sEntry.scores[c.idx];
+        if(!sc2||sc2.correct==='')return;
+        if(qType==='听英文写中英文'){
+          var en2=(sc2.correct&&sc2.total)?sc2.correct+'/'+sc2.total:'-/-';
+          var cn2=(sc2.correct_cn&&sc2.total_cn)?sc2.correct_cn+'/'+sc2.total_cn:'-/-';
+          parts.push('英'+en2+' 中'+cn2);
+        }else{
+          parts.push(sc2.correct&&sc2.total?sc2.correct+'/'+sc2.total:'-/-');
+        }
+      });
+      if(parts.length>0)classSummary+=esc(stu.name)+'：'+parts.join('，')+'<br>';
+    });
+    classSummary+='</p>';
+  });
+  classSummary+='</div>';
+
+  // === Per-student evaluations ===
+  var studentEvals=students.map(function(stu){
+    var stuEntry=lesson.entries.find(function(e){return e.studentId==stu.id;});
+    if(!stuEntry)return '<div class="report-block"><h4>'+esc(stu.name)+'</h4><p class="text-light">无成绩数据</p></div>';
+    var typeResults=[];
+    var overallPctSum=0,overallCount=0;
+    scoreCols.forEach(function(col,i){
+      var sc=stuEntry.scores[i];
+      if(!sc)return;
+      var isDual=col.questionType==='听英文写中英文';
+      if(isDual){
+        if(sc.correct!==''&&sc.total!==''&&parseInt(sc.total)>0){
+          var pct_en=Math.round(parseInt(sc.correct)/parseInt(sc.total)*100);
+          var level_en=getLevel(pct_en,cls.targetBand,col.section,col.questionType);
+          typeResults.push({questionType:'英文听写',section:col.section,testId:col.testId,correct:sc.correct,total:sc.total,pct:pct_en,level:level_en});
+          overallPctSum+=pct_en;overallCount++;
+        }
+        if(sc.correct_cn!==''&&sc.total_cn!==''&&parseInt(sc.total_cn)>0){
+          var pct_cn=Math.round(parseInt(sc.correct_cn)/parseInt(sc.total_cn)*100);
+          var level_cn=getLevel(pct_cn,cls.targetBand,col.section,col.questionType);
+          typeResults.push({questionType:'中文听写',section:col.section,testId:col.testId,correct:sc.correct_cn,total:sc.total_cn,pct:pct_cn,level:level_cn});
+          overallPctSum+=pct_cn;overallCount++;
+        }
+      }else{
+        if(sc.correct===''||sc.total===''||parseInt(sc.total)===0)return;
+        var pct=Math.round(parseInt(sc.correct)/parseInt(sc.total)*100);
+        var level=getLevel(pct,cls.targetBand,col.section,col.questionType);
+        typeResults.push({questionType:col.questionType,section:col.section,testId:col.testId,correct:sc.correct,total:sc.total,pct:pct,level:level});
+        overallPctSum+=pct;overallCount++;
+      }
+    });
+    if(typeResults.length===0)return '<div class="report-block"><h4>'+esc(stu.name)+'</h4><p class="text-light">无有效成绩数据</p></div>';
+    var overallPct=Math.round(overallPctSum/overallCount);
+    var overallLevel=getLevel(overallPct,cls.targetBand,2,'');
+    var evalParts=[];
+    evalParts.push('<strong>【总体表现】</strong>本次练习综合正确率 '+overallPct+'%，整体表现'+(overallLevel==='好'?'优秀':overallLevel==='中'?'良好':'有待提升')+'。');
+    var crLevel=stuEntry.classroomLevel||overallLevel;
+    var crTpl=pickTemplate('课堂表现',crLevel);
+    if(crTpl)evalParts.push('<strong>【课堂表现】</strong>'+esc(crTpl.text));
+    if(stuEntry.homeworkLevel==='手动'&&stuEntry.homeworkNote){
+      evalParts.push('<strong>【作业完成】</strong>'+esc(stuEntry.homeworkNote));
+    }else{
+      var hwLevel=stuEntry.homeworkLevel||overallLevel;
+      var hwTpl=pickTemplate('作业完成',hwLevel);
+      if(hwTpl)evalParts.push('<strong>【作业完成】</strong>'+esc(hwTpl.text));
+    }
+    
+    // Group same questionType+section, use average for template
+    var grouped={}; var groupOrder=[];
+    typeResults.forEach(function(tr){
+      var key=tr.questionType+'|'+tr.section;
+      if(!grouped[key]){grouped[key]={questionType:tr.questionType,section:tr.section,items:[],sumPct:0,count:0};groupOrder.push(key);}
+      grouped[key].items.push(tr);grouped[key].sumPct+=tr.pct;grouped[key].count++;
+    });
+    groupOrder.forEach(function(key){
+      var grp=grouped[key];
+      var avgPct=Math.round(grp.sumPct/grp.count);
+      var avgLevel=getLevel(avgPct,cls.targetBand,grp.section,grp.questionType);
+      var mappedGroup;
+      if(grp.questionType==='填空题'){
+        var fs=parseInt(grp.section);
+        mappedGroup=(fs===1||fs===2)?['P1填空题']:['P4填空题'];
+      }else{
+        mappedGroup=QUESTION_TEMPLATE_MAP[grp.questionType];
+      }
+      if(mappedGroup){
+        mappedGroup.forEach(function(mg){
+          var tpl=pickTemplate(mg,avgLevel);
+          if(tpl){
+            var secLabel=grp.section==='单词听写'?'单词听写':'P'+grp.section;
+            var scoresStr=grp.items.map(function(it){
+              var tid=it.testId?' ('+it.testId+')':'';
+              return tid+' '+it.correct+'/'+it.total+', '+it.pct+'%';
+            }).join(',');
+            var avgLabel=grp.items.length>1?'，平均 '+avgPct+'%':'';
+            evalParts.push('<strong>【'+grp.questionType+' '+secLabel+scoresStr+avgLabel+'】</strong>'+esc(tpl.text));
+            var sgGroup='建议-'+grp.questionType;
+            if(grp.questionType==='填空题'){
+              sgGroup=(fs===1||fs===2)?'建议-P1填空题':'建议-P4填空题';
+            }
+            if(grp.questionType!=='英文听写'&&grp.questionType!=='中文听写'){
+              var sgTpl=pickTemplate(sgGroup,avgLevel);
+              if(sgTpl)evalParts.push('<strong>【建议】</strong>'+esc(sgTpl.text));
+            }
+          }
+        });
+      }
+    });
+    var scoreSummary=groupOrder.map(function(key){
+      var grp=grouped[key];
+      var avgPct=Math.round(grp.sumPct/grp.count);
+      var avgLevel=getLevel(avgPct,cls.targetBand,grp.section,grp.questionType);
+      var secTag=grp.section==='单词听写'?'单词听写':'P'+grp.section;
+      return '<span class="tag '+(avgLevel==='好'?'tag-good':avgLevel==='中'?'tag-mid':'tag-poor')+'">'+esc(grp.questionType)+' '+secTag+': '+avgPct+'% '+avgLevel+'</span>';
+    }).join(' ');
+    return '<div class="report-block"><h4>'+esc(stu.name)+' <span style="font-weight:normal;font-size:12px">'+scoreSummary+'</span></h4>'+
+      evalParts.map(function(p){return '<p style="margin-top:6px">'+p+'</p>';}).join('')+'</div>';
+  }).join('');
+
+  // === Final assembly ===
+  body.innerHTML='<h3 style="margin-bottom:16px">'+esc(cls.name)+' - '+esc(lesson.date)+' '+esc(lesson.title)+' - 评价报告</h3>'+
+    '<div class="btn-group mb-8"><button class="btn btn-sm btn-primary" onclick="copyReport()">复制报告文本</button></div>'+
+    classSummary+
+    '<h4 style="margin:16px 0 8px;color:var(--primary)">➜ 学生评价</h4>'+
+    '<div id="reportContent">'+studentEvals+'</div>';
+}
+
+
+function generateSummary(classId){
+  var body=document.getElementById('summaryBody_'+classId);if(!body)return;
+  var cls=store.classes.find(function(c){return c.id==classId;});if(!cls)return;
+  var cbs=document.querySelectorAll('.cb_'+classId+':checked');
+  if(cbs.length===0){body.innerHTML='<div class="text-light mt-8">请至少勾选一个课时</div>';return;}
+  var selectedIds=Array.from(cbs).map(function(cb){return cb.value;});
+  var selectedLessons=store.lessons.filter(function(l){return selectedIds.indexOf(String(l.id))!==-1;});
+  var dim=summaryDimCache[classId]||'type';
+  var allStuS=sortStudents(store.students.filter(function(s){return s.classId==classId;}));
+  var students=studentSearch?allStuS.filter(function(s){return s.name.indexOf(studentSearch)!==-1;}):allStuS;
+  var dimLabels={'type':'按题型','section':'按Section','sectionType':'按Section×题型'};
+  var h='<h3 style="margin:16px 0 12px">阶段报告 - '+esc(cls.name)+' ('+dimLabels[dim]+')</h3>';
+  h+='<p class="text-light mb-8">汇总 '+selectedLessons.length+' 个课时：'+selectedLessons.map(function(l){return l.title;}).join('、')+'</p>';
+  h+='<div>'+students.map(function(stu){
+    var dimMap={};
+    selectedLessons.forEach(function(lesson){
+      var entry=lesson.entries.find(function(e){return e.studentId==stu.id;});
+      if(!entry||lesson.entries.length===0)return;
+      lesson.entries[0].scores.forEach(function(col,i){
+        var sc=entry.scores[i];
+        if(!sc||sc.correct===''||sc.total===''||parseInt(sc.total)===0)return;
+        var pct=Math.round(parseInt(sc.correct)/parseInt(sc.total)*100);
+        var key;
+        if(dim==='type')key=col.questionType;
+        else if(dim==='section')key='P'+col.section;
+        else key='P'+col.section+' '+col.questionType;
+        if(!dimMap[key])dimMap[key]={sum:0,count:0};
+        dimMap[key].sum+=pct;dimMap[key].count++;
+        dimMap[key].section=col.section;
+        dimMap[key].qType=col.questionType;
+      });
+    });
+    var keys=Object.keys(dimMap);
+    if(keys.length===0)return '<div class="report-block"><h4>'+esc(stu.name)+'</h4><p class="text-light">无有效数据</p></div>';
+    var totalSum=0,totalCount=0;
+    keys.forEach(function(k){totalSum+=dimMap[k].sum;totalCount+=dimMap[k].count;});
+    var overallPct=Math.round(totalSum/totalCount);
+    var overallLevel=getLevel(overallPct,cls.targetBand,2,'');
+    var evalParts=[];
+    evalParts.push('<strong>【阶段总评】</strong>阶段综合正确率 '+overallPct+'%，整体表现'+(overallLevel==='好'?'优秀':overallLevel==='中'?'良好':'有待提升')+'。');
+    evalParts.push('<strong>【词汇】</strong>'+esc(getTemplateText('词汇',overallLevel)));
+    evalParts.push('<strong>【语音辨析】</strong>'+esc(getTemplateText('语音辨析',overallLevel)));
+    var stageTpl=pickTemplate('阶段总评',overallLevel);
+    if(stageTpl)evalParts.push('<strong>【总体评价】</strong>'+esc(stageTpl.text));
+    keys.sort().forEach(function(k){
+      var d=dimMap[k];var avgPct=Math.round(d.sum/d.count);
+      var lvl=getLevel(avgPct,cls.targetBand,d.section||2,d.qType||'');
+      var tag='<span class="tag '+(lvl==='好'?'tag-good':lvl==='中'?'tag-mid':'tag-poor')+'">'+lvl+'</span>';
+      evalParts.push('<strong>'+esc(k)+'：</strong>'+d.count+'次练习，平均正确率 '+avgPct+'% '+tag);
+    });
+    var trendTpl=pickTemplate('进步趋势',overallLevel);
+    if(trendTpl)evalParts.push('<strong>【进步趋势】</strong>'+esc(trendTpl.text));
+    var weakKeys=keys.filter(function(k){var d=dimMap[k];var avg=Math.round(d.sum/d.count);return getLevel(avg,cls.targetBand,d.section||2,d.qType||'')==='差';});
+    if(weakKeys.length>0){
+      var weakTpl=pickTemplate('薄弱环节','差');
+      evalParts.push('<strong>【薄弱环节】</strong>需要重点加强：'+weakKeys.map(function(k){return esc(k);}).join('、')+'。'+(weakTpl?esc(weakTpl.text):''));
+    }else if(overallLevel==='好'){
+      var weakTplGood=pickTemplate('薄弱环节','好');
+      if(weakTplGood)evalParts.push('<strong>【薄弱环节】</strong>'+esc(weakTplGood.text));
+    }else{
+      var weakTplMid=pickTemplate('薄弱环节','中');
+      if(weakTplMid)evalParts.push('<strong>【薄弱环节】</strong>'+esc(weakTplMid.text));
+    }
+    var suggTpl=pickTemplate('阶段建议',overallLevel);
+    if(suggTpl)evalParts.push('<strong>【阶段建议】</strong>'+esc(suggTpl.text));
+    var scoreSummary=keys.sort().map(function(k){
+      var d=dimMap[k];var avgPct=Math.round(d.sum/d.count);var lvl=getLevel(avgPct,cls.targetBand,d.section||2,d.qType||'');
+      return '<span class="tag '+(lvl==='好'?'tag-good':lvl==='中'?'tag-mid':'tag-poor')+'">'+esc(k)+'：'+avgPct+'% ('+d.count+'次) '+lvl+'</span>';
+    }).join(' ');
+    return '<div class="report-block"><h4>'+esc(stu.name)+' <span style="font-weight:normal;font-size:12px">'+scoreSummary+'</span></h4>'+evalParts.map(function(p){return '<p style="margin-top:6px">'+p+'</p>';}).join('')+'</div>';
+  }).join('')+'</div>';
+  body.innerHTML=h;
+  body.style.display='block';
+  body.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function copyReport(){
+  var content=document.getElementById('reportContent');
+  if(!content)return;
+  navigator.clipboard.writeText(content.innerText).then(function(){alert('报告已复制到剪贴板');});
+}
+
+function showTemplateModal(){
+  var tbody=document.querySelector('#templateTable tbody');
+  var groups=[];store.templates.forEach(function(t){if(groups.indexOf(t.group)===-1)groups.push(t.group);});
+  tbody.innerHTML=store.templates.map(function(t){
+    return '<tr><td><select onchange="updateTemplate('+t.id+',\'group\',this.value)">'+groups.map(function(g){return '<option value="'+esc(g)+'"'+(g===t.group?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'<option value="__new__">+ 新维度</option></select></td>'+
+    '<td><select onchange="updateTemplate('+t.id+',\'level\',this.value)"><option value="好"'+(t.level==='好'?' selected':'')+'>好</option><option value="中"'+(t.level==='中'?' selected':'')+'>中</option><option value="差"'+(t.level==='差'?' selected':'')+'>差</option></select></td>'+
+    '<td><textarea rows="2" onchange="updateTemplate('+t.id+',\'text\',this.value)">'+esc(t.text)+'</textarea></td>'+
+    '<td><button class="btn btn-xs btn-danger" onclick="deleteTemplate('+t.id+')">删除</button></td></tr>';
+  }).join('');
+  document.getElementById('templateModal').classList.add('show');
+}
+
+function updateTemplate(id,field,value){
+  var t=store.templates.find(function(t){return t.id===id;});if(!t)return;
+  if(field==='group'&&value==='__new__'){var ng=prompt('新维度名称：');if(!ng)return;t.group=ng;}
+  else t[field]=value;
+  saveStore();showTemplateModal();
+}
+
+function addTemplate(){
+  var group=prompt('维度名称：');if(!group)return;
+  var level=prompt('等级（好/中/差）：','中');if(!level)return;
+  var text=prompt('话术文本：');if(!text)return;
+  store.templates.push({id:genId(),group:group,level:level,text:text});
+  saveStore();showTemplateModal();
+}
+
+function deleteTemplate(id){if(!confirm('确定删除该模板吗？'))return;store.templates=store.templates.filter(function(t){return t.id!==id;});saveStore();showTemplateModal();}
+function resetTemplates(){if(!confirm('确定恢复默认话术模板吗？'))return;store.templates=getDefaultTemplates();saveStore();showTemplateModal();}
+
+function exportTemplatesCSV(){
+  var csv='维度,等级,话术文本\n';
+  store.templates.forEach(function(t){
+    var text=t.text.replace(/"/g,'""');
+    csv+='"'+t.group+'","'+t.level+'","'+text+'"\n';
+  });
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');
+  a.href=url;a.download='话术模板.csv';a.click();URL.revokeObjectURL(url);
+}
+
+function importTemplatesCSV(event){
+  var file=event.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var text=e.target.result;
+    var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+    if(lines.length<2){alert('CSV文件格式不正确');return;}
+    var imported=[];
+    for(var i=1;i<lines.length;i++){
+      var parts=parseCSVLine(lines[i]);
+      if(parts.length>=3&&parts[0]&&parts[1]&&parts[2]){
+        imported.push({id:genId(),group:parts[0].trim(),level:parts[1].trim(),text:parts[2].trim()});
+      }
+    }
+    if(imported.length===0){alert('未解析到有效模板数据');return;}
+    if(!confirm('即将导入 '+imported.length+' 条模板，确定覆盖当前模板吗？'))return;
+    store.templates=imported;
+    saveStore();showTemplateModal();
+    alert('导入成功！共 '+imported.length+' 条模板');
+  };
+  reader.readAsText(file,'utf-8');
+  event.target.value='';
+}
+
+function parseCSVLine(line){
+  var result=[];var current='';var inQuotes=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(inQuotes){
+      if(ch==='"'){
+        if(i+1<line.length&&line[i+1]==='"'){current+='"';i++;}
+        else inQuotes=false;
+      }else current+=ch;
+    }else{
+      if(ch==='"')inQuotes=true;
+      else if(ch===','){result.push(current);current='';}
+      else current+=ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function closeTemplateModal(){document.getElementById('templateModal').classList.remove('show');}
+
+function showThresholdModal(){
+  var tbody=document.querySelector('#thresholdTable tbody');
+  tbody.innerHTML=store.thresholds.map(function(t){
+    return '<tr><td><select onchange="updateThreshold('+t.id+',\'targetBand\',this.value)"><option value="5.5"'+(t.targetBand==='5.5'?' selected':'')+'>5.5</option><option value="6.5"'+(t.targetBand==='6.5'?' selected':'')+'>6.5</option><option value="7.0"'+(t.targetBand==='7.0'?' selected':'')+'>7.0</option></select></td>'+
+    '<td><select onchange="updateThreshold('+t.id+',\'sectionRange\',this.value)"><option value="P1-P2"'+(t.sectionRange==='P1-P2'?' selected':'')+'>P1-P2 (简单)</option><option value="P3-P4"'+(t.sectionRange==='P3-P4'?' selected':'')+'>P3-P4 (困难)</option><option value="数字字母"'+(t.sectionRange==='数字字母'?' selected':'')+'>数字字母</option><option value="单词听写"'+(t.sectionRange==='单词听写'?' selected':'')+'>单词听写</option></select></td>'+
+    '<td><select onchange="updateThreshold('+t.id+',\'level\',this.value)"><option value="好"'+(t.level==='好'?' selected':'')+'>好</option><option value="中"'+(t.level==='中'?' selected':'')+'>中</option><option value="差"'+(t.level==='差'?' selected':'')+'>差</option></select></td>'+
+    '<td><input type="number" value="'+t.minPercent+'" min="0" max="100" style="width:80px" onchange="updateThreshold('+t.id+',\'minPercent\',parseInt(this.value))"> %</td>'+
+    '<td><button class="btn btn-xs btn-danger" onclick="deleteThreshold('+t.id+')">删除</button></td></tr>';
+  }).join('');
+  document.getElementById('thresholdModal').classList.add('show');
+}
+
+function updateThreshold(id,field,value){var t=store.thresholds.find(function(t){return t.id===id;});if(!t)return;t[field]=value;saveStore();}
+function addThreshold(){store.thresholds.push({id:genId(),targetBand:'5.5',sectionRange:'P1-P2',level:'中',minPercent:50});saveStore();showThresholdModal();}
+function deleteThreshold(id){if(!confirm('确定删除该阈值规则吗？'))return;store.thresholds=store.thresholds.filter(function(t){return t.id!==id;});saveStore();showThresholdModal();}
+function resetThresholds(){if(!confirm('确定恢复默认阈值配置吗？'))return;store.thresholds=getDefaultThresholds();saveStore();showThresholdModal();}
+function closeThresholdModal(){document.getElementById('thresholdModal').classList.remove('show');}
+
+function exportData(){
+  var blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');
+  a.href=url;a.download='雅思评价数据备份.json';a.click();URL.revokeObjectURL(url);
+}
+
+function importData(event){
+  var file=event.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data.classes||!data.templates||!data.thresholds)throw new Error('Invalid format');
+      if(!confirm('即将导入：'+data.classes.length+' 个班级，'+(data.students||[]).length+' 名学生，'+(data.lessons||[]).length+' 条课时记录。确定覆盖当前数据？'))return;
+      store=data;saveStore();
+      renderClasses();renderLessonPanel();renderReportPanel();
+      document.getElementById('scoreEntry').innerHTML='';document.getElementById('reportArea').innerHTML='';
+      alert('导入成功！');
+    }catch(ex){alert('导入失败：文件格式不正确');}
+  };
+  reader.readAsText(file);event.target.value='';
+}
+
+renderClasses();renderLessonPanel();renderReportPanel();
+</script>
+<footer style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;border-top:1px solid var(--border-light);margin-top:40px">如有问题，请查阅使用手册或联系微信（longyao0321）</footer>
+</body>
+</html>
