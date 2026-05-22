@@ -219,17 +219,17 @@ tr[draggable=true]:active{cursor:grabbing}
 <div class="content">
 
 <div id="panel-classes" class="panel">
-<div class="card"><div class="flex-between mb-8"><h2>班级列表</h2><button class="btn btn-primary btn-sm" onclick="addGroupClass()" style="margin-right:6px">+ 新增班课</button><button class="btn btn-sm" onclick="addOneOnOne()">+ 新增一对一</button></div>
+<div class="card"><div class="flex-between mb-8"><h2>班级列表</h2><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="addGroupClass()">+ 新增班课</button><button class="btn btn-primary btn-sm" onclick="addOneOnOne()">+ 新增一对一</button></div></div>
 <div id="classList"></div></div>
 </div>
 
 <div id="panel-lessons" class="panel active">
-<div class="row mb-8" style="gap:8px"><input id="lessonSearchInput" type="text" placeholder="搜索学生姓名..." style="width:200px;font-size:12px;padding:6px 10px" oninput="studentSearch=this.value;renderLessonPanel();if(currentLessonId)renderLessonScores();"><span id="lessonSearchHint" class="text-light" style="display:none">已过滤</span></div>
+<div class="row mb-8" style="gap:8px;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">搜索</span><input type="text" placeholder="学生姓名..." style="width:160px;font-size:12px;padding:6px 10px" oninput="studentSearch=this.value;renderLessonPanel();if(currentLessonId)renderLessonScores();" value=""><span style="font-size:12px;color:var(--text-secondary);margin-left:8px">跳转</span><select id="lessonNavSelect" style="width:180px;font-size:12px;padding:6px 10px" onchange="navigateTo(this.value);this.value='';"><option value="">加载中...</option></select></div>
 <div id="lessonPanel"></div>
 </div>
 
 <div id="panel-reports" class="panel">
-<div class="row mb-8" style="gap:8px"><input id="reportSearchInput" type="text" placeholder="搜索学生姓名..." style="width:200px;font-size:12px;padding:6px 10px" oninput="studentSearch=this.value;renderReportPanel();"><span id="reportSearchHint" class="text-light" style="display:none">已过滤</span></div>
+<div class="row mb-8" style="gap:8px;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">搜索</span><input type="text" placeholder="学生姓名..." style="width:160px;font-size:12px;padding:6px 10px" oninput="studentSearch=this.value;renderReportPanel();" value=""><span style="font-size:12px;color:var(--text-secondary);margin-left:8px">跳转</span><select id="reportNavSelect" style="width:180px;font-size:12px;padding:6px 10px" onchange="navigateTo(this.value);this.value='';"><option value="">加载中...</option></select></div>
 <div id="reportPanel"></div>
 </div>
 
@@ -488,19 +488,73 @@ function getTestInfo(band,seq,questionType){
   var total=seqData['total']||10;
   return {testId:testId,total:total};
 }
-var QUESTION_TEMPLATE_MAP={'数字字母':['数字字母'],'填空题':['填空题'],'单选题':['单选题'],'多选题':['多选题'],'匹配题':['匹配题'],'地图题':['地图题'],'听英文写中英文':['听英文写中英文'],'听英文写中文':['听英文写中文']};
+var QUESTION_TEMPLATE_MAP={'数字字母':['数字字母'],'地图题':['地图题'],'听英文写中英文':['听英文写英文'],'听英文写中文':['听英文写中文']};
 var currentLessonId=null;var studentSearch='';
 
 function sortStudents(list){return list.sort(function(a,b){return (a.sortOrder||0)-(b.sortOrder||0);});}
 function updateSearchHints(){var lh=document.getElementById('lessonSearchHint');if(lh)lh.style.display=studentSearch?'inline':'none';var rh=document.getElementById('reportSearchHint');if(rh)rh.style.display=studentSearch?'inline':'none';}
+function populateNavDropdowns(){
+  try{
+  console.log('populateNavDropdowns called, classes:',store.classes.length);
+  var lessonSel=document.getElementById('lessonNavSelect');
+  var reportSel=document.getElementById('reportNavSelect');
+  var opts='<option value="">跳转到...</option>';
+  [{label:'班课',list:store.classes.filter(function(c){return getClassType(c)==='班课';})},
+   {label:'一对一',list:store.classes.filter(function(c){return getClassType(c)==='一对一';})}].forEach(function(group){
+    if(group.list.length===0)return;
+    opts+='<optgroup label="'+group.label+'">';
+    group.list.forEach(function(cls){
+      opts+='<option value="cls_'+cls.id+'">'+esc(cls.name)+'</option>';
+      var stus=sortStudents(store.students.filter(function(s){return s.classId==cls.id;}));
+      stus.forEach(function(s){
+        opts+='<option value="stu_'+s.id+'">  └ '+esc(s.name)+'</option>';
+      });
+    });
+    opts+='</optgroup>';
+  });
+  if(lessonSel)lessonSel.innerHTML=opts;
+  if(reportSel)reportSel.innerHTML=opts;
+  }catch(e){console.log('populateNavDropdowns error:',e);}
+}
+function navigateTo(targetId){
+  if(!targetId)return;
+  if(targetId.indexOf('cls_')===0){
+    var cid=targetId.replace('cls_','');
+    var body=document.getElementById('classBody_'+cid);
+    if(body){body.classList.add('open');body.style.display='block';}
+    var icon=document.getElementById('expandIcon_'+cid);
+    if(icon)icon.innerHTML='&#x25BC;';
+    var el=document.getElementById('classCard_'+cid);
+    if(el){var icon=document.getElementById('expandIcon_'+cid);if(icon)icon.innerHTML='&#x25BC;';var bodyEl=document.getElementById('classBody_'+cid);if(bodyEl){bodyEl.classList.add('open');bodyEl.style.display='block';}el.style.backgroundColor='#fef9f0';el.style.boxShadow='0 0 0 3px var(--accent)';el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){el.style.backgroundColor='';el.style.boxShadow='';},2500);}
+  }else if(targetId.indexOf('stu_')===0){
+    var sid=targetId.replace('stu_','');
+    var stu=store.students.find(function(s){return s.id==sid;});
+    if(stu){
+      var cid=stu.classId;
+      var body=document.getElementById('classBody_'+cid);
+      if(body&&body.classList.contains('collapsible-body'))body.classList.add('open');
+      studentSearch=stu.name;
+      if(document.getElementById('panel-lessons').classList.contains('active')){
+        renderLessonPanel();if(currentLessonId)renderLessonScores();
+      }
+      if(document.getElementById('panel-reports').classList.contains('active')){
+        renderReportPanel();
+      }
+      setTimeout(function(){
+        var el=document.getElementById('classCard_'+cid);
+        if(el){var icon=document.getElementById('expandIcon_'+cid);if(icon)icon.innerHTML='&#x25BC;';var bodyEl=document.getElementById('classBody_'+cid);if(bodyEl){bodyEl.classList.add('open');bodyEl.style.display='block';}el.style.backgroundColor='#fef9f0';el.style.boxShadow='0 0 0 3px var(--accent)';el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){el.style.backgroundColor='';el.style.boxShadow='';},2500);}
+      },100);
+    }
+  }
+}
 
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===name);});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
   document.getElementById('panel-'+name).classList.add('active');
   if(name==='classes')renderClasses();
-  if(name==='lessons'){studentSearch='';renderLessonPanel();}
-  if(name==='reports'){studentSearch='';currentReportLessonId=null;renderReportPanel();}
+  if(name==='lessons'){studentSearch='';renderLessonPanel();setTimeout(populateNavDropdowns,150);}
+  if(name==='reports'){studentSearch='';currentReportLessonId=null;renderReportPanel();setTimeout(populateNavDropdowns,150);}
 }
 
 function renderClasses(){
@@ -519,7 +573,7 @@ function renderClasses(){
 function renderClassCard(cls){
   var students=sortStudents(store.students.filter(function(s){return s.classId==cls.id;}));
   var isOne=cls.type=='一对一';
-  var h='<div class="card" style="margin-bottom:12px">';
+  var h='<div class="card" style="margin-bottom:12px" id="classCard_'+cls.id+'">';
   h+='<div class="flex-between" style="cursor:pointer" onclick="toggleClassExpand(\''+cls.id+'\')">';
   h+='<div><span id="expandIcon_'+cls.id+'" style="display:inline-block;width:16px;font-size:12px">&#x25B6;</span> ';
   h+='<strong>'+esc(cls.name)+'</strong>';
@@ -576,7 +630,7 @@ function addGroupClass(){
   var targetBand=prompt('目标分数（5.5 / 6.5 / 7.0）：');
   if(!targetBand||['5.5','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.5, 6.5, 7.0');return;}
   store.classes.push({id:genId(),name:name,targetBand:targetBand,type:'班课'});
-  saveStore();renderClasses();renderLessonPanel();renderReportPanel();
+  saveStore();renderClasses();renderLessonPanel();renderReportPanel();setTimeout(populateNavDropdowns,100);
 }
 
 function addOneOnOne(){
@@ -586,7 +640,7 @@ function addOneOnOne(){
   var clsId=genId();
   store.classes.push({id:clsId,name:name,targetBand:targetBand,type:'一对一'});
   store.students.push({id:genId(),name:name,classId:clsId,sortOrder:1});
-  saveStore();renderClasses();renderLessonPanel();renderReportPanel();
+  saveStore();renderClasses();renderLessonPanel();renderReportPanel();setTimeout(populateNavDropdowns,100);
 }
 
 function editClass(id){
@@ -705,8 +759,9 @@ function renderLessonPanel(){
   var div=document.getElementById('lessonPanel');
   if(store.classes.length===0){div.innerHTML='<div class="empty"><span class="empty-icon">&#x1F4DD;</span><p>还没有创建班级</p><button class="btn btn-primary btn-sm" onclick="switchTab(\'classes\')">去创建班级</button></div>';return;}
   var h='';
-  var sortedClasses=store.classes.concat().sort(function(a,b){return getClassType(a)==='一对一'?1:getClassType(b)==='一对一'?-1:0;}); var lastType=''; sortedClasses.forEach(function(cls){var ct=getClassType(cls);if(ct!==lastType){h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:14px">'+ct+'</h3>';lastType=ct;}
-    h+='<div class="card" style="margin-bottom:12px">';
+  var sortedClasses=store.classes.concat().sort(function(a,b){return getClassType(a)==='一对一'?1:getClassType(b)==='一对一'?-1:0;});
+  if(studentSearch){sortedClasses=sortedClasses.filter(function(cls){return store.students.some(function(s){return s.classId==cls.id&&s.name.indexOf(studentSearch)!==-1;});});} var lastType=''; sortedClasses.forEach(function(cls){var ct=getClassType(cls);if(ct!==lastType){h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:14px">'+ct+'</h3>';lastType=ct;}
+    h+='<div class="card" style="margin-bottom:12px" id="classCard_'+cls.id+'">';
     h+='<div class="flex-between mb-8"><div><strong>'+esc(cls.name)+'</strong>';
     h+='<span class="tag tag-mid" style="margin-left:8px">目标 '+esc(cls.targetBand)+' 分</span></div>';
     h+='<button class="btn btn-primary btn-sm" onclick="createLesson(\''+cls.id+'\')">+ 新增课时</button></div>';
@@ -729,7 +784,7 @@ function renderLessonPanel(){
     h+='</div>';
   });
   div.innerHTML=h;
-  updateSearchHints();
+  updateSearchHints();populateNavDropdowns();
   if(currentLessonId)renderLessonScores();
 }
 
@@ -999,9 +1054,10 @@ function renderReportPanel(){
   var div=document.getElementById('reportPanel');
   if(store.classes.length===0){div.innerHTML='<div class="empty"><span class="empty-icon">&#x1F4DD;</span><p>还没有创建班级</p><button class="btn btn-primary btn-sm" onclick="switchTab(\'classes\')">去创建班级</button></div>';return;}
   var h='';
-  var sortedClasses=store.classes.concat().sort(function(a,b){return getClassType(a)==='一对一'?1:getClassType(b)==='一对一'?-1:0;}); var lastType=''; sortedClasses.forEach(function(cls){var ct=getClassType(cls);if(ct!==lastType){h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:14px">'+ct+'</h3>';lastType=ct;}
+  var sortedClasses=store.classes.concat().sort(function(a,b){return getClassType(a)==='一对一'?1:getClassType(b)==='一对一'?-1:0;});
+  if(studentSearch){sortedClasses=sortedClasses.filter(function(cls){return store.students.some(function(s){return s.classId==cls.id&&s.name.indexOf(studentSearch)!==-1;});});} var lastType=''; sortedClasses.forEach(function(cls){var ct=getClassType(cls);if(ct!==lastType){h+='<h3 style="margin-bottom:8px;color:var(--primary);font-size:14px">'+ct+'</h3>';lastType=ct;}
     var lessons=store.lessons.filter(function(l){return l.classId==cls.id;});
-    h+='<div class="card" style="margin-bottom:12px">';
+    h+='<div class="card" style="margin-bottom:12px" id="classCard_'+cls.id+'">';
     h+='<div class="flex-between mb-8"><div><strong>'+esc(cls.name)+'</strong>';
     h+='<span class="tag tag-mid" style="margin-left:8px">目标 '+esc(cls.targetBand)+' 分</span>';
     h+='<span class="text-light" style="margin-left:8px">'+lessons.length+' 课时</span></div></div>';
@@ -1031,6 +1087,7 @@ function renderReportPanel(){
     h+='</div>';
   });
   div.innerHTML=h;
+  updateSearchHints();populateNavDropdowns();
   if(currentReportLessonId)generateReport();
 }
 
@@ -1170,9 +1227,15 @@ function generateReport(){
       var avgPct=Math.round(grp.sumPct/grp.count);
       var avgLevel=getLevel(avgPct,cls.targetBand,grp.section,grp.questionType);
       var mappedGroup;
+      var fs=parseInt(grp.section);
       if(grp.questionType==='填空题'){
-        var fs=parseInt(grp.section);
         mappedGroup=(fs===1||fs===2)?['P1填空题']:['P4填空题'];
+      }else if(grp.questionType==='单选题'){
+        mappedGroup=(fs===1||fs===2)?['单选题']:['单选题-P3'];
+      }else if(grp.questionType==='多选题'){
+        mappedGroup=(fs===1||fs===2)?['多选题']:['多选题-P3'];
+      }else if(grp.questionType==='匹配题'){
+        mappedGroup=(fs===1||fs===2)?['匹配题']:['匹配题-P3'];
       }else{
         mappedGroup=QUESTION_TEMPLATE_MAP[grp.questionType];
       }
@@ -1420,7 +1483,7 @@ function importData(event){
       if(!data.classes||!data.templates||!data.thresholds)throw new Error('Invalid format');
       if(!confirm('即将导入：'+data.classes.length+' 个班级，'+(data.students||[]).length+' 名学生，'+(data.lessons||[]).length+' 条课时记录。确定覆盖当前数据？'))return;
       store=data;saveStore();
-      renderClasses();renderLessonPanel();renderReportPanel();
+      renderClasses();renderLessonPanel();renderReportPanel();setTimeout(populateNavDropdowns,100);
       document.getElementById('scoreEntry').innerHTML='';document.getElementById('reportArea').innerHTML='';
       alert('导入成功！');
     }catch(ex){alert('导入失败：文件格式不正确');}
@@ -1428,7 +1491,7 @@ function importData(event){
   reader.readAsText(file);event.target.value='';
 }
 
-renderClasses();renderLessonPanel();renderReportPanel();
+renderClasses();renderLessonPanel();renderReportPanel();setTimeout(populateNavDropdowns,100);
 </script>
 <footer style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;border-top:1px solid var(--border-light);margin-top:40px">如有问题，请查阅使用手册或联系微信（longyao0321）</footer>
 </body>
