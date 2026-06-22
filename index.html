@@ -278,10 +278,23 @@ function loadStore(){
 function saveStore(){localStorage.setItem(STORE_KEY,JSON.stringify(store));}
 function genId(){return store.nextId++;}
 function getClassType(cls){return cls.type||'班课';}
+var SUB_DIMENSION_MAP={'课堂表现':['注意力','笔记','互动','精神状态','主动性'],'作业完成':['提交','质量','复习','生词背诵','反思'],'词汇':['基础词汇量','辨音准确度','学科词汇','反应速度','拼写'],'语音辨析':['连读弱读','否定捕捉','重音判断','语调理解','语速适应']};
+
 function pickTemplate(group,level){
   var candidates=store.templates.filter(function(t){return t.group===group&&t.level===level;});
   if(candidates.length===0)return null;
   return candidates[Math.floor(Math.random()*candidates.length)];
+}
+
+function getSubTemplateText(group,level){
+  var subs=SUB_DIMENSION_MAP[group];
+  if(!subs)return null;
+  var parts=[];
+  subs.forEach(function(sub){
+    var candidates=store.templates.filter(function(t){return t.group===group+'-'+sub&&t.level===level;});
+    if(candidates.length>0)parts.push(candidates[Math.floor(Math.random()*candidates.length)].text);
+  });
+  return parts.length>0?parts.join(''):null;
 }
 function getTemplateText(group,level){
   var t=pickTemplate(group,level);
@@ -359,42 +372,73 @@ function getDefaultTemplates(){
 
 function getDefaultThresholds(){
   return [
-    {id:1,targetBand:'5.5',sectionRange:'P1-P2',level:'好',minPercent:70},
-    {id:2,targetBand:'5.5',sectionRange:'P1-P2',level:'中',minPercent:50},
-    {id:3,targetBand:'5.5',sectionRange:'P1-P2',level:'差',minPercent:0},
-    {id:4,targetBand:'5.5',sectionRange:'P3-P4',level:'好',minPercent:60},
-    {id:5,targetBand:'5.5',sectionRange:'P3-P4',level:'中',minPercent:40},
-    {id:6,targetBand:'5.5',sectionRange:'P3-P4',level:'差',minPercent:0},
-    {id:7,targetBand:'6.5',sectionRange:'P1-P2',level:'好',minPercent:80},
-    {id:8,targetBand:'6.5',sectionRange:'P1-P2',level:'中',minPercent:65},
-    {id:9,targetBand:'6.5',sectionRange:'P1-P2',level:'差',minPercent:0},
-    {id:10,targetBand:'6.5',sectionRange:'P3-P4',level:'好',minPercent:70},
-    {id:11,targetBand:'6.5',sectionRange:'P3-P4',level:'中',minPercent:50},
-    {id:12,targetBand:'6.5',sectionRange:'P3-P4',level:'差',minPercent:0},
-    {id:13,targetBand:'7.0',sectionRange:'P1-P2',level:'好',minPercent:90},
-    {id:14,targetBand:'7.0',sectionRange:'P1-P2',level:'中',minPercent:75},
-    {id:15,targetBand:'7.0',sectionRange:'P1-P2',level:'差',minPercent:0},
-    {id:16,targetBand:'7.0',sectionRange:'P3-P4',level:'好',minPercent:80},
-    {id:17,targetBand:'7.0',sectionRange:'P3-P4',level:'中',minPercent:60},
-    {id:18,targetBand:'7.0',sectionRange:'P3-P4',level:'差',minPercent:0},
-    {id:19,targetBand:'5.5',sectionRange:'数字字母',level:'好',minPercent:80},
-    {id:20,targetBand:'5.5',sectionRange:'数字字母',level:'中',minPercent:60},
-    {id:21,targetBand:'5.5',sectionRange:'数字字母',level:'差',minPercent:0},
-    {id:22,targetBand:'5.5',sectionRange:'单词听写',level:'好',minPercent:80},
-    {id:23,targetBand:'5.5',sectionRange:'单词听写',level:'中',minPercent:60},
-    {id:24,targetBand:'5.5',sectionRange:'单词听写',level:'差',minPercent:0},
-    {id:25,targetBand:'6.5',sectionRange:'数字字母',level:'好',minPercent:85},
-    {id:26,targetBand:'6.5',sectionRange:'数字字母',level:'中',minPercent:70},
-    {id:27,targetBand:'6.5',sectionRange:'数字字母',level:'差',minPercent:0},
-    {id:28,targetBand:'6.5',sectionRange:'单词听写',level:'好',minPercent:85},
-    {id:29,targetBand:'6.5',sectionRange:'单词听写',level:'中',minPercent:70},
-    {id:30,targetBand:'6.5',sectionRange:'单词听写',level:'差',minPercent:0},
-    {id:31,targetBand:'7.0',sectionRange:'数字字母',level:'好',minPercent:90},
-    {id:32,targetBand:'7.0',sectionRange:'数字字母',level:'中',minPercent:80},
-    {id:33,targetBand:'7.0',sectionRange:'数字字母',level:'差',minPercent:0},
-    {id:34,targetBand:'7.0',sectionRange:'单词听写',level:'好',minPercent:90},
-    {id:35,targetBand:'7.0',sectionRange:'单词听写',level:'中',minPercent:80},
-    {id:36,targetBand:'7.0',sectionRange:'单词听写',level:'差',minPercent:0}
+    // 5.0
+    {id:1,targetBand:'5.0',sectionRange:'P1-P2',level:'好',minPercent:65},
+    {id:2,targetBand:'5.0',sectionRange:'P1-P2',level:'中',minPercent:45},
+    {id:3,targetBand:'5.0',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:4,targetBand:'5.0',sectionRange:'P3-P4',level:'好',minPercent:50},
+    {id:5,targetBand:'5.0',sectionRange:'P3-P4',level:'中',minPercent:30},
+    {id:6,targetBand:'5.0',sectionRange:'P3-P4',level:'差',minPercent:0},
+    // 5.5
+    {id:7,targetBand:'5.5',sectionRange:'P1-P2',level:'好',minPercent:70},
+    {id:8,targetBand:'5.5',sectionRange:'P1-P2',level:'中',minPercent:50},
+    {id:9,targetBand:'5.5',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:10,targetBand:'5.5',sectionRange:'P3-P4',level:'好',minPercent:55},
+    {id:11,targetBand:'5.5',sectionRange:'P3-P4',level:'中',minPercent:35},
+    {id:12,targetBand:'5.5',sectionRange:'P3-P4',level:'差',minPercent:0},
+    // 6.0
+    {id:13,targetBand:'6.0',sectionRange:'P1-P2',level:'好',minPercent:75},
+    {id:14,targetBand:'6.0',sectionRange:'P1-P2',level:'中',minPercent:58},
+    {id:15,targetBand:'6.0',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:16,targetBand:'6.0',sectionRange:'P3-P4',level:'好',minPercent:60},
+    {id:17,targetBand:'6.0',sectionRange:'P3-P4',level:'中',minPercent:40},
+    {id:18,targetBand:'6.0',sectionRange:'P3-P4',level:'差',minPercent:0},
+    // 6.5
+    {id:19,targetBand:'6.5',sectionRange:'P1-P2',level:'好',minPercent:80},
+    {id:20,targetBand:'6.5',sectionRange:'P1-P2',level:'中',minPercent:65},
+    {id:21,targetBand:'6.5',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:22,targetBand:'6.5',sectionRange:'P3-P4',level:'好',minPercent:70},
+    {id:23,targetBand:'6.5',sectionRange:'P3-P4',level:'中',minPercent:50},
+    {id:24,targetBand:'6.5',sectionRange:'P3-P4',level:'差',minPercent:0},
+    // 7.0
+    {id:25,targetBand:'7.0',sectionRange:'P1-P2',level:'好',minPercent:90},
+    {id:26,targetBand:'7.0',sectionRange:'P1-P2',level:'中',minPercent:75},
+    {id:27,targetBand:'7.0',sectionRange:'P1-P2',level:'差',minPercent:0},
+    {id:28,targetBand:'7.0',sectionRange:'P3-P4',level:'好',minPercent:80},
+    {id:29,targetBand:'7.0',sectionRange:'P3-P4',level:'中',minPercent:60},
+    {id:30,targetBand:'7.0',sectionRange:'P3-P4',level:'差',minPercent:0},
+    // 数字字母 (all bands, slightly higher than P1-P2)
+    {id:31,targetBand:'5.0',sectionRange:'数字字母',level:'好',minPercent:70},
+    {id:32,targetBand:'5.0',sectionRange:'数字字母',level:'中',minPercent:50},
+    {id:33,targetBand:'5.0',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:34,targetBand:'5.5',sectionRange:'数字字母',level:'好',minPercent:75},
+    {id:35,targetBand:'5.5',sectionRange:'数字字母',level:'中',minPercent:55},
+    {id:36,targetBand:'5.5',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:37,targetBand:'6.0',sectionRange:'数字字母',level:'好',minPercent:80},
+    {id:38,targetBand:'6.0',sectionRange:'数字字母',level:'中',minPercent:62},
+    {id:39,targetBand:'6.0',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:40,targetBand:'6.5',sectionRange:'数字字母',level:'好',minPercent:85},
+    {id:41,targetBand:'6.5',sectionRange:'数字字母',level:'中',minPercent:70},
+    {id:42,targetBand:'6.5',sectionRange:'数字字母',level:'差',minPercent:0},
+    {id:43,targetBand:'7.0',sectionRange:'数字字母',level:'好',minPercent:95},
+    {id:44,targetBand:'7.0',sectionRange:'数字字母',level:'中',minPercent:80},
+    {id:45,targetBand:'7.0',sectionRange:'数字字母',level:'差',minPercent:0},
+    // 单词听写 (fixed: 好>=80%, 中>=60%, 差<60%)
+    {id:46,targetBand:'5.0',sectionRange:'单词听写',level:'好',minPercent:80},
+    {id:47,targetBand:'5.0',sectionRange:'单词听写',level:'中',minPercent:60},
+    {id:48,targetBand:'5.0',sectionRange:'单词听写',level:'差',minPercent:0},
+    {id:49,targetBand:'5.5',sectionRange:'单词听写',level:'好',minPercent:80},
+    {id:50,targetBand:'5.5',sectionRange:'单词听写',level:'中',minPercent:60},
+    {id:51,targetBand:'5.5',sectionRange:'单词听写',level:'差',minPercent:0},
+    {id:52,targetBand:'6.0',sectionRange:'单词听写',level:'好',minPercent:80},
+    {id:53,targetBand:'6.0',sectionRange:'单词听写',level:'中',minPercent:60},
+    {id:54,targetBand:'6.0',sectionRange:'单词听写',level:'差',minPercent:0},
+    {id:55,targetBand:'6.5',sectionRange:'单词听写',level:'好',minPercent:80},
+    {id:56,targetBand:'6.5',sectionRange:'单词听写',level:'中',minPercent:60},
+    {id:57,targetBand:'6.5',sectionRange:'单词听写',level:'差',minPercent:0},
+    {id:58,targetBand:'7.0',sectionRange:'单词听写',level:'好',minPercent:80},
+    {id:59,targetBand:'7.0',sectionRange:'单词听写',level:'中',minPercent:60},
+    {id:60,targetBand:'7.0',sectionRange:'单词听写',level:'差',minPercent:0}
   ];
 }
 
@@ -627,16 +671,16 @@ function toggleClassExpand(classId){
 
 function addGroupClass(){
   var name=prompt('班级名称（如 YZKT 1000）：');if(!name)return;
-  var targetBand=prompt('目标分数（5.5 / 6.5 / 7.0）：');
-  if(!targetBand||['5.5','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.5, 6.5, 7.0');return;}
+  var targetBand=prompt('目标分数（5.0 / 5.5 / 6.0 / 6.5 / 7.0）：');
+  if(!targetBand||['5.0','5.5','6.0','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.0, 5.5, 6.0, 6.5, 7.0');return;}
   store.classes.push({id:genId(),name:name,targetBand:targetBand,type:'班课'});
   saveStore();renderClasses();renderLessonPanel();renderReportPanel();setTimeout(populateNavDropdowns,100);
 }
 
 function addOneOnOne(){
   var name=prompt('学生姓名：');if(!name)return;
-  var targetBand=prompt('目标分数（5.5 / 6.5 / 7.0）：');
-  if(!targetBand||['5.5','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.5, 6.5, 7.0');return;}
+  var targetBand=prompt('目标分数（5.0 / 5.5 / 6.0 / 6.5 / 7.0）：');
+  if(!targetBand||['5.0','5.5','6.0','6.5','7.0'].indexOf(targetBand)===-1){alert('请输入有效的目标分数：5.0, 5.5, 6.0, 6.5, 7.0');return;}
   var clsId=genId();
   store.classes.push({id:clsId,name:name,targetBand:targetBand,type:'一对一'});
   store.students.push({id:genId(),name:name,classId:clsId,sortOrder:1});
@@ -1205,14 +1249,14 @@ function generateReport(){
     var evalParts=[];
     evalParts.push('<strong>【总体表现】</strong>本次练习综合正确率 '+overallPct+'%，整体表现'+(overallLevel==='好'?'优秀':overallLevel==='中'?'良好':'有待提升')+'。');
     var crLevel=stuEntry.classroomLevel||overallLevel;
-    var crTpl=pickTemplate('课堂表现',crLevel);
-    if(crTpl)evalParts.push('<strong>【课堂表现】</strong>'+esc(crTpl.text));
+    var crText=getSubTemplateText('课堂表现',crLevel)||getTemplateText('课堂表现',crLevel);
+    if(crText)evalParts.push('<strong>【课堂表现】</strong>'+esc(crText));
     if(stuEntry.homeworkLevel==='手动'&&stuEntry.homeworkNote){
       evalParts.push('<strong>【作业完成】</strong>'+esc(stuEntry.homeworkNote));
     }else{
       var hwLevel=stuEntry.homeworkLevel||overallLevel;
-      var hwTpl=pickTemplate('作业完成',hwLevel);
-      if(hwTpl)evalParts.push('<strong>【作业完成】</strong>'+esc(hwTpl.text));
+      var hwText=getSubTemplateText('作业完成',hwLevel)||getTemplateText('作业完成',hwLevel);
+      if(hwText)evalParts.push('<strong>【作业完成】</strong>'+esc(hwText));
     }
     
     // Group same questionType+section, use average for template
@@ -1322,8 +1366,8 @@ function generateSummary(classId){
     var overallLevel=getLevel(overallPct,cls.targetBand,2,'');
     var evalParts=[];
     evalParts.push('<strong>【阶段总评】</strong>阶段综合正确率 '+overallPct+'%，整体表现'+(overallLevel==='好'?'优秀':overallLevel==='中'?'良好':'有待提升')+'。');
-    evalParts.push('<strong>【词汇】</strong>'+esc(getTemplateText('词汇',overallLevel)));
-    evalParts.push('<strong>【语音辨析】</strong>'+esc(getTemplateText('语音辨析',overallLevel)));
+    var vText=getSubTemplateText('词汇',overallLevel)||getTemplateText('词汇',overallLevel);evalParts.push('<strong>【词汇】</strong>'+esc(vText));
+    var pText=getSubTemplateText('语音辨析',overallLevel)||getTemplateText('语音辨析',overallLevel);evalParts.push('<strong>【语音辨析】</strong>'+esc(pText));
     var stageTpl=pickTemplate('阶段总评',overallLevel);
     if(stageTpl)evalParts.push('<strong>【总体评价】</strong>'+esc(stageTpl.text));
     keys.sort().forEach(function(k){
@@ -1453,7 +1497,7 @@ function closeTemplateModal(){document.getElementById('templateModal').classList
 function showThresholdModal(){
   var tbody=document.querySelector('#thresholdTable tbody');
   tbody.innerHTML=store.thresholds.map(function(t){
-    return '<tr><td><select onchange="updateThreshold('+t.id+',\'targetBand\',this.value)"><option value="5.5"'+(t.targetBand==='5.5'?' selected':'')+'>5.5</option><option value="6.5"'+(t.targetBand==='6.5'?' selected':'')+'>6.5</option><option value="7.0"'+(t.targetBand==='7.0'?' selected':'')+'>7.0</option></select></td>'+
+    return '<tr><td><select onchange="updateThreshold('+t.id+',\'targetBand\',this.value)"><option value="5.0"'+(t.targetBand==='5.0'?' selected':'')+'>5.0</option><option value="5.5"'+(t.targetBand==='5.5'?' selected':'')+'>5.5</option><option value="6.0"'+(t.targetBand==='6.0'?' selected':'')+'>6.0</option><option value="6.5"'+(t.targetBand==='6.5'?' selected':'')+'>6.5</option><option value="7.0"'+(t.targetBand==='7.0'?' selected':'')+'>7.0</option></select></td>'+
     '<td><select onchange="updateThreshold('+t.id+',\'sectionRange\',this.value)"><option value="P1-P2"'+(t.sectionRange==='P1-P2'?' selected':'')+'>P1-P2 (简单)</option><option value="P3-P4"'+(t.sectionRange==='P3-P4'?' selected':'')+'>P3-P4 (困难)</option><option value="数字字母"'+(t.sectionRange==='数字字母'?' selected':'')+'>数字字母</option><option value="单词听写"'+(t.sectionRange==='单词听写'?' selected':'')+'>单词听写</option></select></td>'+
     '<td><select onchange="updateThreshold('+t.id+',\'level\',this.value)"><option value="好"'+(t.level==='好'?' selected':'')+'>好</option><option value="中"'+(t.level==='中'?' selected':'')+'>中</option><option value="差"'+(t.level==='差'?' selected':'')+'>差</option></select></td>'+
     '<td><input type="number" value="'+t.minPercent+'" min="0" max="100" style="width:80px" onchange="updateThreshold('+t.id+',\'minPercent\',parseInt(this.value))"> %</td>'+
@@ -1463,7 +1507,7 @@ function showThresholdModal(){
 }
 
 function updateThreshold(id,field,value){var t=store.thresholds.find(function(t){return t.id===id;});if(!t)return;t[field]=value;saveStore();}
-function addThreshold(){store.thresholds.push({id:genId(),targetBand:'5.5',sectionRange:'P1-P2',level:'中',minPercent:50});saveStore();showThresholdModal();}
+function addThreshold(){store.thresholds.push({id:genId(),targetBand:'5.0',sectionRange:'P1-P2',level:'中',minPercent:45});saveStore();showThresholdModal();}
 function deleteThreshold(id){if(!confirm('确定删除该阈值规则吗？'))return;store.thresholds=store.thresholds.filter(function(t){return t.id!==id;});saveStore();showThresholdModal();}
 function resetThresholds(){if(!confirm('确定恢复默认阈值配置吗？'))return;store.thresholds=getDefaultThresholds();saveStore();showThresholdModal();}
 function closeThresholdModal(){document.getElementById('thresholdModal').classList.remove('show');}
@@ -1484,9 +1528,8 @@ function importData(event){
       if(!confirm('即将导入：'+data.classes.length+' 个班级，'+(data.students||[]).length+' 名学生，'+(data.lessons||[]).length+' 条课时记录。确定覆盖当前数据？'))return;
       store=data;saveStore();
       renderClasses();renderLessonPanel();renderReportPanel();setTimeout(populateNavDropdowns,100);
-      document.getElementById('scoreEntry').innerHTML='';document.getElementById('reportArea').innerHTML='';
-      alert('导入成功！');
-    }catch(ex){alert('导入失败：文件格式不正确');}
+            alert('导入成功！');
+    }catch(ex){alert('导入失败：'+ex.message);}
   };
   reader.readAsText(file);event.target.value='';
 }
